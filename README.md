@@ -33,3 +33,15 @@ Other Resources
 	- [ ] compiler specification; define default aspects of your processor your compiler will use
 - [ ] Write SLASPEC and SINC files
 	- [ ] "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
+
+## Schedule
+
+Target Completion Date: 7/25/2025
+
+| Task                                                                                                                                   | Target Completion Date | Notes                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notes on CHIP-8; <br>- Register layout<br>- Memory layout<br>- Instruction set                                                         | 6/27                   | Should know everything necessary about the langauge to define a Ghidra processor                                                                     |
+| Complete development of Ghidra processor<br>- LDEFS file<br>- PSPEC file<br>- OPINION file<br>- CSPEC file<br>- SLASPEC and SINC files | 7/4                    | Will maybe not be perfect, but should be usable by this milestone                                                                                    |
+| Use the completed Ghidra processor to examine some ROMs; take notes on observations                                                    | 7/11                   | I want to have some sort of meaningful results or understanding gained from looking at the disassembled game ROMs; i.e. be able to write my own game |
+| Write my own game ROM and examine how it looks in Ghidra                                                                               | 7/18                   | maybe snake? tetris? idk                                                                                                                             |
+| Prepare technical presentation on work done, lessons learned, etc.                                                                     | 7/25                   |                                                                                                                                                      |
