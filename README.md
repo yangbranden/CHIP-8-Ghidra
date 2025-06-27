@@ -1,9 +1,30 @@
 # CHIP-8 Ghidra Processor
 
-## Goal
-I want to make a Ghidra module/processor for reverse engineering CHIP-8 programs
+A (WIP) Ghidra module/processor for reverse engineering CHIP-8 programs.
 
-## Research
+## Repository Layout
+
+```
+CHIP-8-Ghidra-Processor
+├── Chip8_Processor: The Eclipse Ghidra module project files (open using Eclipse)
+│   ├── data: Definition files for the CHIP-8 Ghidra processor
+│   │   ├── languages
+│   │   │   ├── chip8.cspec
+│   │   │   ├── chip8.ldefs
+│   │   │   ├── chip8.opinion
+│   │   │   ├── chip8.pspec
+│   │   │   ├── chip8.sinc
+│   │   │   ├── chip8.slaspec
+│   │   │   └── TBD
+│   ├── src: some stuff idk about yet
+│   │   └── TBD
+│   └── TBD
+├── Notes
+│   └── Architecture.md: notes on CHIP-8 architecture/specification
+└── README.md: This file
+```
+
+## Resources
 Key Important Resources
 - [What CHIP-8 is](https://en.m.wikipedia.org/wiki/CHIP-8)
 - [CHIP-8 Specification 1](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)

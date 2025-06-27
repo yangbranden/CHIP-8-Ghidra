@@ -1,2 +1,38 @@
+# build files
+Chip8_Processor/dist
+Chip8_Processor/build
+
+# compiled SLEIGH file
+Chip8_Processor/data/languages/*.sla
+
+# Compiled class file
+Chip8_Processor/*.class
+
+# Log file
+Chip8_Processor/*.log
+
+# BlueJ files
+Chip8_Processor/*.ctxt
+
+# Mobile Tools for Java (J2ME)
+Chip8_Processor/.mtj.tmp/
+
+# Package Files #
+Chip8_Processor/*.jar
+Chip8_Processor/*.war
+Chip8_Processor/*.nar
+Chip8_Processor/*.ear
+Chip8_Processor/*.zip
+Chip8_Processor/*.tar.gz
+Chip8_Processor/*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+Chip8_Processor/hs_err_pid*
+
+# IDE/ant/gradle
 Chip8_Processor/.metadata/
 Chip8_Processor/.settings/
+Chip8_Processor/.ant*
+Chip8_Processor/.gradle
+Chip8_Processor/.project
+Chip8_Processor/.classpath
