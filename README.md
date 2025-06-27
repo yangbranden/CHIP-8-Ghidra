@@ -19,10 +19,10 @@ Other Resources
 - [ghidra.re](https://ghidra.re/)
 
 ## TODO
-- [ ] Research CHIP-8 (take notes)
-	- [ ] Register layout
-	- [ ] Memory layout
-	- [ ] Instruction set
+- [X] Research CHIP-8 (take notes)
+	- [X] Register layout
+	- [X] Memory layout
+	- [X] Instruction set
 - [ ] Write LDEFS file
 	- [ ] initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
 - [ ] Write PSPEC file
