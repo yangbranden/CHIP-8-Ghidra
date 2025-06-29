@@ -33,6 +33,7 @@ Key Important Resources
 - [Ghidra Language Specification](https://ghidra.re/ghidra_docs/languages/index.html) (includes information about SLEIGH and P-Code)
 - [Ghidra Processor Specification - Quick(er) Start Guide](https://github.com/joeferg425/ghidra_proc_spec)
 - [About Adding an Instruction Set Architecture (ISA)](https://www.l3harris.com/newsroom/editorial/2025/01/expanding-dragon-adding-isa-ghidra)
+- [Ghidra Compiler Specification](https://spinsel.dev/assets/2020-06-17-ghidra-brainfuck-processor-1/ghidra_docs/compiler_spec/index.html)
 Other Resources
 - [Ghidra's developer guide](https://github.com/NationalSecurityAgency/ghidra/blob/master/DevGuide.md)
 - [Example for Brainfuck](https://spinsel.dev/2020/06/17/ghidra-brainfuck-processor-1.html)
@@ -40,20 +41,22 @@ Other Resources
 - [ghidra.re](https://ghidra.re/)
 
 ## TODO
-- [X] Research CHIP-8 (take notes)
-	- [X] Register layout
-	- [X] Memory layout
-	- [X] Instruction set
-- [ ] Write LDEFS file
-	- [ ] initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
-- [ ] Write PSPEC file
-	- [ ] definition for default register values and specific register names for common processor functions (such as the program counter and stack pointer)
-- [ ] Write OPINION file
-	- [ ] specify optional logic for sub-processor families and behaviors
+- [x] Research CHIP-8 (take notes)
+	- [x] Register layout
+	- [x] Memory layout
+	- [x] Instruction set
+- [x] Write LDEFS file
+	- initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
+- [x] Write PSPEC file
+	- definition for default register values and specific register names for common processor functions (such as the program counter and stack pointer)
 - [ ] Write CSPEC file
-	- [ ] compiler specification; define default aspects of your processor your compiler will use
+	- compiler specification; define default aspects of your processor your compiler will use
 - [ ] Write SLASPEC and SINC files
-	- [ ] "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
+	- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
+- [ ] (optional) Write OPINION file
+	- specify optional logic for sub-processor families and behaviors
+- [ ] Use the completed Ghidra processor to examine some ROMs
+- [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule
 

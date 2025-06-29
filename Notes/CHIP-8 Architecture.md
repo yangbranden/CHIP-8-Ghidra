@@ -1,4 +1,4 @@
-# CHIP-8 Architecture Notes
+# CHIP-8 Architecture
 
 ## Register layout
 16 8-bit registers
@@ -57,6 +57,7 @@ Stack of 16 16-bit values
 - used to store address the interpreter should return to when finished with a subroutine
 - i.e. 16 levels of nested subroutines
 - `SP` points to topmost level of the stack 
+- [according to reddit](https://www.reddit.com/r/EmuDev/comments/zyo3b9/chip8_stack_vs_memory/), location unspecified; I will put in lower 512 bytes 
 
 
 ## Instruction set
@@ -115,7 +116,7 @@ Set `Vx` = `Vy`.
 
 Stores the value of register V_y_ in register V_x_.
 
-### **`8xy1` - OR `Vx`, `Vy`**  
+### **`8xy1` - OR `Vx`, `Vy`**
 Set `Vx` = `Vx` OR `Vy`.
 
 Performs a bitwise OR on the values of `Vx` and `Vy`, then stores the result in `Vx`. A bitwise OR compares the corrseponding bits from two values, and if either bit is 1, then the same bit in the result is also 1. Otherwise, it is 0.
@@ -135,7 +136,7 @@ Set `Vx` = `Vx` + `Vy`, set `VF` = carry.
 
 The values of `Vx` and `Vy` are added together. If the result is greater than 8 bits (i.e., > 255), `VF` is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in `Vx`.
 
-### **`8xy5` - SUB `Vx`, `Vy`**  
+### **`8xy5` - SUB `Vx`, `Vy`**
 Set `Vx` = `Vx` - `Vy`, set `VF` = NOT borrow.
 
 If `Vx` > `Vy`, then `VF` is set to 1, otherwise 0. Then `Vy` is subtracted from `Vx`, and the results stored in `Vx`.
