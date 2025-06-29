@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- See Relax specification: Ghidra/Framework/SoftwareModeling/data/languages/compiler_spec.rxg -->
-
 <compiler_spec>
   <data_organization>
 	<pointer_size value="2" />
   </data_organization>
   <global>
     <range space="ram"/>
-    <range space="io"/>
   </global>
   <stackpointer register="SP" space="ram"/>
+  
+  <!-- IDK what this stuff is -->
   <default_proto>
     <prototype name="__asmA" extrapop="2" stackshift="2" strategy="register">
       <input>

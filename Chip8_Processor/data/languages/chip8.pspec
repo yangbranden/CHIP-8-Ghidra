@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<processor_spec>
+  <!-- Program counter register (16-bit) -->
+  <programcounter register="PC"/>
+  <register_data>
+    <!-- Index register (16-bit) -->
+    <register name="I">
+    <!-- Stack pointer (8-bit) -->
+    <register name="SP">
+    <!-- Delay and sound timers (8-bit) -->
+    <register name="DT">
+    <register name="ST">
+    <!-- General purpose registers (8-bit) -->
+    <register name="V0">
+    <register name="V1">
+    <register name="V2">
+    <register name="V3">
+    <register name="V4">
+    <register name="V5">
+    <register name="V6">
+    <register name="V7">
+    <register name="V8">
+    <register name="V9">
+    <register name="VA">
+    <register name="VB">
+    <register name="VC">
+    <register name="VD">
+    <register name="VE">
+    <register name="VF">
+  </register_data>
+  <default_symbols>
+    <symbol name="_start" address="ram:0x200" entry="true"/>
+    <!-- Font set -->
+    <symbol name="FONTSET_0" address="ram:0x000"/>
+    <symbol name="FONTSET_1" address="ram:0x005"/>
+    <symbol name="FONTSET_2" address="ram:0x00a"/>
+    <symbol name="FONTSET_3" address="ram:0x00f"/>
+    <symbol name="FONTSET_4" address="ram:0x014"/>
+    <symbol name="FONTSET_5" address="ram:0x019"/>
+    <symbol name="FONTSET_6" address="ram:0x01e"/>
+    <symbol name="FONTSET_7" address="ram:0x023"/>
+    <symbol name="FONTSET_8" address="ram:0x028"/>
+    <symbol name="FONTSET_9" address="ram:0x02d"/>
+    <symbol name="FONTSET_A" address="ram:0x032"/>
+    <symbol name="FONTSET_B" address="ram:0x037"/>
+    <symbol name="FONTSET_C" address="ram:0x03c"/>
+    <symbol name="FONTSET_D" address="ram:0x041"/>
+    <symbol name="FONTSET_E" address="ram:0x046"/>
+    <symbol name="FONTSET_F" address="ram:0x04b"/>
+  </default_symbols>
+  <default_memory_blocks>
+    <memory_block name="FONTSET" start_address="ram:0x000" length="0x50"/>
+    <memory_block name="stack" start_address="ram:0x050" length="0x100"/>
+    <memory_block name="program" start_address="ram:0x200" length="0xe00"/>
+  </default_memory_blocks>
+</processor_spec>
