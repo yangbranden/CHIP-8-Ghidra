@@ -1,3 +1,5 @@
+# Design Notes
+
 ## LDEFS file
 straightforward; just basic info about the architecture
 - Big endian
@@ -99,7 +101,7 @@ I'm specifically looking at `x86-64-gcc.cspec`, which is definitely more detaile
 I think I understand the first parts (I will just add what I think I need for now and then test and see if I need to change anything afterwards)
 
 (here's what my initial thoughts are):
-```
+```xml
 <compiler_spec>
   <data_organization>
 	<pointer_size value="2" />
@@ -180,6 +182,7 @@ Ghidra also needs to solve the inverse problem:
 - given a set of storage locations (registers and stack locations) that look like they are inputs and outputs to a function, 
 - determine a high-level function prototype that produces those locations when compiled
 
+#### `<prototype>` tag
 `<prototype>` tag encodes details about a specific prototype model, within a compiler specification
 - All `<prototype>` tags must include the subtags, `<input>` and `<output>`
 	- `<input>` tag holds the resources used to pass input parameters
@@ -187,7 +190,132 @@ Ghidra also needs to solve the inverse problem:
 	- A resource is described by the `<pentry>` tag
 		- Most `<pentry>` tags describe a storage location to be used by a single variable
 		- If the tag has an _align_ attribute however, multiple variables can be allocated from the same resource
-		- How `<pentry>` resources are used is determined by the prototype model's _strategy_
-			- currently only two strategies: _standard_ and _register_
-			- If the attribute is not present, the prototype model defaults to the _standard_ strategy
 
+`<prototype>` also has a few necessary attributes:
+- `name` (obvious)
+- `extrapop`: Amount stack pointer changes across a call or _unknown_
+- `stackshift`: Amount stack changes due to the call mechanism
+
+`extrapop` specifies the number of bytes a called function (a "callee") removes from the stack _in addition to_ the return address before it returns
+- will usually match the size of the stack-pointer, indicating that a called function usually pops the return value itself and changes the stack pointer in a way not apparent in the (callers) p-code
+- The attribute can also be specified as `unknown`; "This turns on the fairly onerous analysis associated with the Microsoft _stdcall_ calling convention, where functions, upon return, pop off their own stack parameters in addition to the return address"
+
+`stackshift` indicates the amount the stack pointer changes just due to the call mechanism used to access a function with this prototype
+- call instruction for many processors pushes the return address onto the stack
+- typically be 2, 4, or 8, matching the code address size
+
+How `<pentry>` resources are used is determined by the prototype model's _strategy_
+- currently only two strategies: _standard_ and _register_
+- If the attribute is not present, the prototype model defaults to the _standard_ strategy
+
+`standard` strategy is:
+- default approach
+- the `<pentry>` subtags under the `<input>` tag are ordered resource list of storage locations
+- decompiler assigns the first parameter to the first location in the list, the second parameter to the second, and so on, until all available registers are used, after which it typically assigns remaining parameters to the stack
+- expects a strict, sequential use of resources
+
+`register` strategy is:
+- does not rely on a fixed order of resources
+- treats the `<pentry>` tags as a _pool_ of available parameter locations
+- behaves in the same way as the `standard` strategy, except that in the reverse case, the decompiler does not care about gaps in the resource list;
+	- more flexible and is designed to handle non-standard or heavily optimized calling conventions where registers may be used in an arbitrary order
+
+For more clarity, I asked Gemini for an explanation;
+
+## Hypothetical architecture for explanation
+Imagine a hypothetical 32-bit processor with a calling convention defined in a `.cspec` file. This convention dictates that the first four integer parameters are passed in registers `R0`, `R1`, `R2`, and `R3`, in that specific order.
+
+Here is the `<prototype>` definition in the `.cspec` file:
+
+```xml
+<prototype name="my_standard_abi" strategy="standard" extrapop="0" stackshift="0">
+  <input>
+    <pentry minsize="1" maxsize="4">
+      <register name="R0"/>  <!-- 1st parameter goes here -->
+    </pentry>
+    <pentry minsize="1" maxsize="4">
+      <register name="R1"/>  <!-- 2nd parameter goes here -->
+    </pentry>
+    <pentry minsize="1" maxsize="4">
+      <register name="R2"/>  <!-- 3rd parameter goes here -->
+    </pentry>
+    <pentry minsize="1" maxsize="4">
+      <register name="R3"/>  <!-- 4th parameter goes here -->
+    </pentry>
+  </input>
+  <output>
+    <pentry minsize="1" maxsize="4">
+      <register name="R0"/> <!-- Return value goes here -->
+    </pentry>
+  </output>
+</prototype>
+```
+Now, let's consider two scenarios for a function that is intended to have three parameters.
+
+### Scenario 1: The Ideal Case (No Gaps)
+A compiler generates code for the following function:  
+`void process_data(int id, int value, int flags);`
+
+Following the `my_standard_abi` convention correctly, the compiler assigns the parameters as follows:
+- `id` is passed in register **`R0`**.
+- `value` is passed in register **`R1`**.
+- `flags` is passed in register **`R2`**.
+
+**How Ghidra Decompiles This:**
+1. Ghidra analyzes the function's machine code and sees that registers `R0`, `R1`, and `R2` are read by the function before they are written to (they are "live" inputs).
+2. It consults the `<prototype>` named `my_standard_abi`.
+3. It checks the **first** `<pentry>`: is `R0` used as an input? **Yes**. It identifies this as the first parameter.
+4. It checks the **second** `<pentry>`: is `R1` used as an input? **Yes**. It identifies this as the second parameter.
+5. It checks the **third** `<pentry>`: is `R2` used as an input? **Yes**. It identifies this as the third parameter.
+6. It checks the **fourth** `<pentry>`: is `R3` used as an input? **No**. It stops looking.
+
+The decompilation is successful, resulting in a correct signature: `void process_data(int param_1, int param_2, int param_3)`
+
+### Scenario 2: The Problem Case (With a "Gap")
+Now, imagine the same function, but an optimizing compiler realizes that the `id` parameter is never actually used inside the function. To save an instruction, it generates code that calls `process_data` but only loads `value` and `flags`. 
+
+The assignments are now:
+- `R0` is **unused**.
+- `value` is passed in register **`R1`**.
+- `flags` is passed in register **`R2`**.
+
+This creates a "gap" in the expected parameter sequence.
+
+**How Ghidra Decompiles This:**
+1. Ghidra analyzes the function's machine code and sees that registers `R1` and `R2` are used as inputs. `R0` is not.
+2. It consults the same `my_standard_abi` prototype.
+3. It checks the **first** `<pentry>`: is `R0` used as an input? **No**.
+4. Because the very first entry in its ordered list was not met, the `standard` strategy **stops immediately**. It assumes that if the first parameter slot is empty, no subsequent slots can be filled. It does not proceed to check `R1` or `R2`.
+
+The decompilation fails to identify any parameters, resulting in an incorrect signature: `void process_data(void)`. The decompiler sees that `R1` and `R2` are used, but because the calling convention's strict rules were violated, it cannot correctly map them to the function's signature.
+
+#### What This Means for Decompilation
+The **`standard`** strategy is fundamentally rigid. It works perfectly for code that strictly adheres to a well-defined Application Binary Interface (ABI), which is why it is the default. However, it is brittle when dealing with optimized code or custom calling conventions that might skip register assignments. This is the key difference from the `register` strategy, which would have correctly identified `R1` and `R2` as parameters in the second scenario because it treats the `<pentry>` list as a flexible pool rather than a strict sequence.
+
+## Now `prototype` for CHIP-8
+Since "function calls" in CHIP-8 architecture don't really exist (they're just subroutines), it doesn't make sense to have `input`/`output` for this ISA
+
+Essentially the `call` (`0x2NNN`) instruction pushes the return address onto the stack, and the `ret` (`0x00EE`) instruction pops the address from the stack and jumps to it
+
+Additionally, calling convention for arguments are up to the user; nothing is defined in specification, except that everything uses registers, and no arguments are passed to the stack
+
+So with this in mind (`CALL` pushes exactly one 2-byte address, `RET` pops exactly one 2-byte address, and parameters are not passed on stack), design choices are as follows:
+- `extrapop = 0` because amount of extra data popped is always zero
+- `stackshift = 2` because 2-byte addresses,
+- `strategy = "register"` because calling convention is user-defined; not strictly defined (i.e. people can do whatever they decide for arguments)
+- no `input` and no `output` for same reason; calling convention is user-defined
+```xml
+<default_proto>
+    <prototype name="default" extrapop="0" stackshift="2" strategy="register">
+      <input/>
+      <output/>
+    </prototype>
+  </default_proto>
+```
+
+## SLASPEC and SINC files
+
+TODO
+
+
+also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA
