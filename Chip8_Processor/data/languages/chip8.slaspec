@@ -1,0 +1,19 @@
+define endian=big;
+define alignment=2;
+
+## Address spaces
+# CHIP-8 address space is 4096 bytes, so 2-byte addresses
+define space ram        type=ram_space      size=2  default;
+define space register   type=register_space size=1;
+
+## Registers
+# General purpose registers (16 8-bit)
+define register offset=0x00 size=1 [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
+# 16-bit registers (program counter, index register)
+define register offset=0x10 size=2 [ PC I ];
+# Other 8-bit registers (stack pointer, timer registers)
+define register offset=0x14 size=1 [ SP DT ST ];
+
+## P-Code
+# TODO: actually create the logic for the disassembler
+
