@@ -315,7 +315,27 @@ So with this in mind (`CALL` pushes exactly one 2-byte address, `RET` pops exact
 
 ## SLASPEC and SINC files
 
-TODO
+Referencing `skel.slaspec` for how to do this (I tried looking at `x86.slaspec` and it seems more complex, referencing a bunch of `.sinc` files)
+
+Using these references:
+1. https://github.com/joeferg425/ghidra_proc_spec?tab=readme-ov-file
+2. https://github.com/beardypig/ghidra-chip8/blob/master/data/languages/chip8.slaspec
+3. https://spinsel.dev/2020/06/17/ghidra-brainfuck-processor-1.html#the-language-specification
+4. https://ghidra.re/ghidra_docs/languages/html/sleigh_definitions.html
+
+OK so I read through the specification ([resource #4](https://ghidra.re/ghidra_docs/languages/html/sleigh_definitions.html)) and took notes in [[Ghidra SLEIGH]]; 
+
+First I'm going to define the instruction token:
+```
+define token instr (16)
+    opcode = (12,15)    # upper nibble (4 bits) is used as opcode for most instructions
+    addr = (0, 11)      # lower 12 bits used as address
+    # TODO
+;
+```
+
+TODO: finish this tomorrow/sunday
+
 
 
 also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA

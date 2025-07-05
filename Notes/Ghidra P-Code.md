@@ -2,9 +2,18 @@
 
 Referenced: [P-Code Reference Manual](https://spinsel.dev/assets/2020-06-17-ghidra-brainfuck-processor-1/ghidra_docs/language_spec/html/pcoderef.html)
 
-"_register transfer language_" designed for reverse engineering applications
+Distinct from [[Ghidra SLEIGH]]; because major purpose of SLEIGH is to specify the translation from machine code to p-code
+
+P-code is a Register Transfer Language (RTL), distinct from SLEIGH, designed to specify the _semantics_ of machine instructions (i.e. detailed description of how an instruction actually manipulates data, in registers and in RAM)
 
 Essentially a generalized language for modeling behavior of many different processors
+
+Key properties of p-code:
+- The language is machine independent.
+- The language is designed to model general purpose processors.
+- Instructions operate on user defined registers and address spaces.
+- All data is manipulated explicitly. Instructions have no indirect effects.
+- Individual p-code operations mirror typical processor tasks and concepts.
 
 P-code works by translating individual processor instructions into a sequence of `p-code operations` that take parts of the processor state as input and output variables (`varnodes`)
 

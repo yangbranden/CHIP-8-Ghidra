@@ -1,10 +1,12 @@
 define endian=big;
 define alignment=2;
 
+
 ## Address spaces
 # CHIP-8 address space is 4096 bytes, so 2-byte addresses
 define space ram        type=ram_space      size=2  default;
 define space register   type=register_space size=1;
+
 
 ## Registers
 # General purpose registers (16 8-bit)
@@ -13,7 +15,32 @@ define register offset=0x00 size=1 [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD V
 define register offset=0x10 size=2 [ PC I ];
 # Other 8-bit registers (stack pointer, timer registers)
 define register offset=0x14 size=1 [ SP DT ST ];
+# Vx and Vy are used to refer to registers
+attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 
-## P-Code
-# TODO: actually create the logic for the disassembler
+
+## Instruction format
+# All CHIP-8 instructions are 2 bytes
+define token instr (16)
+    opcode = (12,15)    # upper nibble (4 bits) is used as opcode for most instructions
+    addr = (0, 11)      # lower 12 bits used as address
+    # TODO (adding things as they come up)
+;
+
+
+## Variables and Macros
+# TODO (I will need to define some more things probably)
+
+
+## Instructions
+# Following Cowgod's specification
+
+# 0nnn - SYS addr; Jump to a machine code routine at addr
+:sys addr is op=0x0 & addr {
+    goto addr;
+}
+
+
+
+# TODO: finish writing the logic for the disassembler
 
