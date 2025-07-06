@@ -325,16 +325,61 @@ Using these references:
 
 OK so I read through the specification ([resource #4](https://ghidra.re/ghidra_docs/languages/html/sleigh_definitions.html)) and took notes in [[Ghidra SLEIGH]]; 
 
-First I'm going to define the instruction token:
-```
-define token instr (16)
-    opcode = (12,15)    # upper nibble (4 bits) is used as opcode for most instructions
-    addr = (0, 11)      # lower 12 bits used as address
-    # TODO
-;
-```
+The following is notes on each CHIP-8 instruction's SLEIGH code
 
-TODO: finish this tomorrow/sunday
+SYS instruction
+```
+# 0nnn - SYS addr; Jump to a machine code routine at addr
+:SYS addr is opcode=0x0 & nnn {
+    goto addr;
+}
+```
+- `SYS` instruction requires opcode = `0` and `nnn` to exist
+- we define `addr` as a local operand, which gets its definition from `nnn`;
+	- this works because the SLEIGH compiler links the local operands from the display section (i.e. `addr`) to the unbound global fields in the pattern section (i.e. `nnn`) based on their order of appearance; i.e. `nnn` gets "bound" to `addr`
+	- `opcode=0x0` is a constraint, not a global operand being bound
+
+RET instruction
+actually found a pretty good example for a 32bit arch in the SLEIGH docs: https://ghidra.re/ghidra_docs/languages/html/sleigh_constructors.html (section 7.7.2.5); difference is that CHIP-8 stack is growing up instead of down (so operations are inverse)
+```
+# 00EE - RET; Return from a subroutine
+:RET is opcode_full=0x00EE {
+	SP = SP - 2;
+    local tmp:2 = *:2 SP;
+	return [tmp];
+}
+```
+- The specification says "set PC, then subtract 1" but I think it doesn't really make sense to do that; it should be the opposite
+	- say we start off with stack at `0x50`; when we do a call, we don't add first and then put the address (because then we'd just be wasting an index; i.e. the first index would just never get used)
+	- so I think we actually want to do the inverse; when returning, we subtract first and THEN return
+- Also another thing I considered when designing the `CALL`/`RET` instructions; I am making the stack pointer (`SP`) essentially act as a direct reference to the stack, rather than an index
+	- I considered making it an index into the 16-slot stack (because that's what the specification suggests) and calculating an offset with a `STACK_BASE` but I think that makes it less readable 
+		- ok now i realize this was actually not what the spec said and I'm just being stupid
+		- BUT I think i still need to make `SP` 16-bit? otherwise I could just have it assume it's in the lower address space (i.e. first 4 bits of addr assumed to be `0b0000`)
+	- So instead, `SP` when dereferenced directly will hold the stack entry it is currently looking at
+	- This does mean that I have to make `SP` a 16-bit register instead of the 8-bit like the specification suggests ("can be 8-bit") 
+- I am being overly verbose when defining this; `local tmp:2 = *:2 SP;` I could technically just do `return [*:2 SP];` 
+
+JP instruction
+```
+# 1nnn - JP addr; Jump to location nnn
+:JP addr is opcode=0x1 & nnn {
+    goto addr;
+}
+```
+- same as SYS
+
+CALL instruction
+```
+# 2nnn - CALL addr; Call subroutine at nnn
+:CALL addr is opcode=0x2 & nnn {
+    *:2 SP = addr;
+    SP = SP + 2;
+    call addr;
+}
+```
+- again, spec says increment first and THEN push to stack; that logic doesn't make sense to me
+
 
 
 

@@ -1,20 +1,18 @@
 define endian=big;
 define alignment=2;
 
-
 ## Address spaces
 # CHIP-8 address space is 4096 bytes, so 2-byte addresses
 define space ram        type=ram_space      size=2  default;
 define space register   type=register_space size=1;
 
-
 ## Registers
 # General purpose registers (16 8-bit)
 define register offset=0x00 size=1 [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
-# 16-bit registers (program counter, index register)
-define register offset=0x10 size=2 [ PC I ];
-# Other 8-bit registers (stack pointer, timer registers)
-define register offset=0x14 size=1 [ SP DT ST ];
+# 16-bit registers (stack pointer, program counter, index register)
+define register offset=0x10 size=2 [ SP PC I ];
+# Other 8-bit registers (timer registers)
+define register offset=0x14 size=1 [ DT ST ];
 # Vx and Vy are used to refer to registers
 attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 
@@ -22,9 +20,13 @@ attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 ## Instruction format
 # All CHIP-8 instructions are 2 bytes
 define token instr (16)
-    opcode = (12,15)    # upper nibble (4 bits) is used as opcode for most instructions
-    addr = (0, 11)      # lower 12 bits used as address
-    # TODO (adding things as they come up)
+    opcode_full = (0,15)        # The full 16-bit instruction (some instructions interpret all)
+    opcode      = (12,15)       # Opcode: Highest 4 bits
+    nnn         = (0,11)        # nnn or addr: A 12-bit value, the lowest 12 bits of the instruction
+    n           = (0,3)         # n or nibble: A 4-bit value, the lowest 4 bits of the instruction
+    x           = (8,11)        # x: A 4-bit value, the lower 4 bits of the high byte of the instruction
+    y           = (4,7)         # y: A 4-bit value, the upper 4 bits of the low byte of the instruction
+    kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
 ;
 
 
@@ -36,10 +38,118 @@ define token instr (16)
 # Following Cowgod's specification
 
 # 0nnn - SYS addr; Jump to a machine code routine at addr
-:sys addr is op=0x0 & addr {
+:SYS addr is opcode=0x0 & nnn {
     goto addr;
 }
 
+# 00EE - RET; Return from a subroutine
+:RET is opcode_full=0x00EE {
+	SP = SP - 2;
+    local tmp:2 = *:2 SP;
+	return [tmp];
+}
+
+# 1nnn - JP addr; Jump to location nnn
+:JP addr is opcode=0x1 & nnn {
+    goto addr;
+}
+
+# 2nnn - CALL addr; Call subroutine at nnn
+:CALL addr is opcode=0x2 & nnn {
+    *:2 SP = addr;
+    SP = SP + 2;
+    call addr;
+}
+
+# 3xkk - SE Vx, byte; Skip next instruction if Vx = kk
+# TODO
+
+# 4xkk - SNE Vx, byte; Skip next instruction if Vx != kk
+# TODO
+
+# 5xy0 - SE Vx, Vy; Skip next instruction if Vx = Vy
+# TODO
+
+# 6xkk - LD Vx, byte; Set Vx = kk
+# TODO
+
+# 7xkk - ADD Vx, byte; Set Vx = Vx + kk
+# TODO
+
+# 8xy0 - LD Vx, Vy; Set Vx = Vy
+# TODO
+
+# 8xy1 - OR Vx, Vy; Set Vx = Vx OR Vy
+# TODO
+
+# 8xy2 - AND Vx, Vy; Set Vx = Vx AND Vy
+# TODO
+
+# 8xy3 - XOR Vx, Vy; Set Vx = Vx XOR Vy
+# TODO
+
+# 8xy4 - ADD Vx, Vy; Set Vx = Vx + Vy, set VF = carry
+# TODO
+
+# 8xy5 - SUB Vx, Vy; Set Vx = Vx - Vy, set VF = NOT borrow
+# TODO
+
+# 8xy6 - SHR Vx {, Vy}; Set Vx = Vx SHR 1
+# TODO
+
+# 8xy7 - SUBN Vx, Vy; Set Vx = Vy - Vx, set VF = NOT borrow
+# TODO
+
+# 8xyE - SHL Vx {, Vy}; Set Vx = Vx SHL 1
+# TODO
+
+# 9xy0 - SNE Vx, Vy; Skip next instruction if Vx != Vy
+# TODO
+
+# Annn - LD I, addr; Set I = nnn
+# TODO
+
+# Bnnn - JP V0, addr; Jump to location nnn + V0
+# TODO
+
+# Cxkk - RND Vx, byte; Set Vx = random byte AND kk
+# TODO
+
+# Dxyn - DRW Vx, Vy, nibble; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+# TODO
+
+# Ex9E - SKP Vx; Skip next instruction if key with the value of Vx is pressed
+# TODO
+
+# ExA1 - SKNP Vx; Skip next instruction if key with the value of Vx is not pressed
+# TODO
+
+# Fx07 - LD Vx, DT; Set Vx = delay timer value
+# TODO
+
+# Fx0A - LD Vx, K; Wait for a key press, store the value of the key in Vx
+# TODO
+
+# Fx15 - LD DT, Vx; Set delay timer = Vx
+# TODO
+
+# Fx18 - LD ST, Vx; Set sound timer = Vx
+# TODO
+
+# Fx1E - ADD I, Vx; Set I = I + Vx
+# TODO
+
+# Fx29 - LD F, Vx; Set I = location of sprite for digit Vx
+# TODO
+
+# Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
+# TODO
+
+# Fx55 - LD [I], Vx; Store registers V0 through Vx in memory starting at location I
+# TODO
+
+# Fx65 - LD Vx, [I]; Read registers V0 through Vx from memory starting at location I
+# TODO
 
 
 # TODO: finish writing the logic for the disassembler

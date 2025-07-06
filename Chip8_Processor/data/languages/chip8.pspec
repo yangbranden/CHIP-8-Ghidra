@@ -6,7 +6,7 @@
   <register_data>
     <!-- Index register (16-bit) -->
     <register name="I">
-    <!-- Stack pointer (8-bit) -->
+    <!-- Stack pointer (16-bit) -->
     <register name="SP">
     <!-- Delay and sound timers (8-bit) -->
     <register name="DT">
