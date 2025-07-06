@@ -62,34 +62,55 @@ define token instr (16)
 }
 
 # 3xkk - SE Vx, byte; Skip next instruction if Vx = kk
-# TODO
+:SE Vx, byte is opcode=0x3 & x & kk {
+    if (Vx == byte) goto (inst_next + 2);
+}
 
 # 4xkk - SNE Vx, byte; Skip next instruction if Vx != kk
-# TODO
+:SNE Vx, byte is opcode=0x4 & x & kk {
+    if (Vx != byte) goto (inst_next + 2);
+}
 
 # 5xy0 - SE Vx, Vy; Skip next instruction if Vx = Vy
-# TODO
+:SE Vx, Vy is opcode=0x5 & x & y & n=0 {
+    if (Vx == Vy) goto (inst_next + 2);
+}
 
 # 6xkk - LD Vx, byte; Set Vx = kk
-# TODO
+:LD Vx, byte is opcode=0x6 & x & kk {
+    Vx = byte;
+}
 
 # 7xkk - ADD Vx, byte; Set Vx = Vx + kk
-# TODO
+:ADD Vx, byte is opcode=0x7 & x & kk {
+    Vx = Vx + byte;
+}
 
 # 8xy0 - LD Vx, Vy; Set Vx = Vy
-# TODO
+:LD Vx, Vy is opcode=0x8 & x & y & n=0 {
+    Vx = Vy;
+}
 
 # 8xy1 - OR Vx, Vy; Set Vx = Vx OR Vy
-# TODO
+:OR Vx, Vy is opcode=0x8 & x & y & n=1 {
+    Vx = Vx | Vy;
+}
 
 # 8xy2 - AND Vx, Vy; Set Vx = Vx AND Vy
-# TODO
+:AND Vx, Vy is opcode=0x8 & x & y & n=2 {
+    Vx = Vx & Vy;
+}
 
 # 8xy3 - XOR Vx, Vy; Set Vx = Vx XOR Vy
-# TODO
+:XOR Vx, Vy is opcode=0x8 & x & y & n=3 {
+    Vx = Vx ^ Vy;
+}
 
 # 8xy4 - ADD Vx, Vy; Set Vx = Vx + Vy, set VF = carry
-# TODO
+:ADD Vx, Vy is opcode=0x8 & x & y & n=4 {
+    Vx = Vx & Vy;
+    # TODO: flag stuff
+}
 
 # 8xy5 - SUB Vx, Vy; Set Vx = Vx - Vy, set VF = NOT borrow
 # TODO
