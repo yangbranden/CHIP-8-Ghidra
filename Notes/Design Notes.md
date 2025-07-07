@@ -541,7 +541,13 @@ LD "B"
 ```
 # Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
 :LD "B", Vx is opcode=0xF & x & kk=0x33 {
-    # TODO
+    local hundreds = Vx / 100;
+    local tens = (Vx / 10) % 10;
+    local ones = Vx % 10;
+
+    *:1 I = hundreds;
+    *:1 (I+1) = tens;
+    *:1 (I+2) = ones;
 }
 ```
 Representation of what's going on in memory: (if `I` is at `0x1000` and `Vx` has value `234`)
@@ -560,6 +566,15 @@ Representation of what's going on in memory: (if `I` is at `0x1000` and `Vx` has
 +--------+-----------------+----------------------+
 ```
 
+LD `I`, `Vx`; Store registers V0 through Vx in memory starting at location I
+- we need to create 16 different constructors
 
+same for the read instr:
+LD `Vx`, `I`; Read registers V0 through Vx from memory starting at location I
+
+OK I AM NOT REALLY SURE IF THIS ALL WORKS BECAUSE I HAVEN'T TESTED IT YET BUT EVERYTHING IS WRITTEN SO FAR SO... idk I'll see about it later in the week
 
 also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA
+
+## Fixing everything
+TODO: there's definitely things that are broken

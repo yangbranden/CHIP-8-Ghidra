@@ -39,6 +39,7 @@ define pcodeop get_key_press;   # get current key press
 define pcodeop draw_sprite;     # draw sprite onto the screen
 
 ## Macros
+@include "chip8.sinc"
 macro set_flag(value) {
     VF = value:1;
 }
@@ -240,12 +241,342 @@ macro set_flag(value) {
 }
 
 # Fx55 - LD [I], Vx; Store registers V0 through Vx in memory starting at location I
-:LD [I], Vx is opcode=0xF & x & kk=0x55 {
-    # TODO
+:LD [I], V0 is opcode=0xF & x=0 & kk=0x55 & V0 {
+    *:1 I = V0;
 }
+:LD [I], V1 is opcode=0xF & x=1 & kk=0x55 & V0 & V1 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+}
+:LD [I], V2 is opcode=0xF & x=2 & kk=0x55 & V0 & V1 & V2 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+}
+:LD [I], V3 is opcode=0xF & x=3 & kk=0x55 & V0 & V1 & V2 & V3 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+}
+:LD [I], V4 is opcode=0xF & x=4 & kk=0x55 & V0 & V1 & V2 & V3 & V4 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+}
+:LD [I], V5 is opcode=0xF & x=5 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+}
+:LD [I], V6 is opcode=0xF & x=6 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+}
+:LD [I], V7 is opcode=0xF & x=7 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+}
+:LD [I], V8 is opcode=0xF & x=8 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+}
+:LD [I], V9 is opcode=0xF & x=9 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+}
+:LD [I], VA is opcode=0xF & x=10 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+}
+:LD [I], VB is opcode=0xF & x=11 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+    *:1 (I+11) = VB;
+}
+:LD [I], VC is opcode=0xF & x=12 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+    *:1 (I+11) = VB;
+    *:1 (I+12) = VC;
+}
+:LD [I], VD is opcode=0xF & x=13 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+    *:1 (I+11) = VB;
+    *:1 (I+12) = VC;
+    *:1 (I+13) = VD;
+}
+:LD [I], VE is opcode=0xF & x=14 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD & VE {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+    *:1 (I+11) = VB;
+    *:1 (I+12) = VC;
+    *:1 (I+13) = VD;
+    *:1 (I+14) = VE;
+}
+:LD [I], VF is opcode=0xF & x=15 & kk=0x55 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD & VE & VF {
+    *:1 I = V0;
+    *:1 (I+1) = V1;
+    *:1 (I+2) = V2;
+    *:1 (I+3) = V3;
+    *:1 (I+4) = V4;
+    *:1 (I+5) = V5;
+    *:1 (I+6) = V6;
+    *:1 (I+7) = V7;
+    *:1 (I+8) = V8;
+    *:1 (I+9) = V9;
+    *:1 (I+10) = VA;
+    *:1 (I+11) = VB;
+    *:1 (I+12) = VC;
+    *:1 (I+13) = VD;
+    *:1 (I+14) = VE;
+    *:1 (I+15) = VF;
+}
+
 
 # Fx65 - LD Vx, [I]; Read registers V0 through Vx from memory starting at location I
-:LD Vx, [I] is opcode=0xF & x & kk=0x65 {
-    # TODO
+:LD V0, [I] is opcode=0xF & x=0 & kk=0x65 & V0 {
+    V0 = *:1 I;
 }
-
+:LD V1, [I] is opcode=0xF & x=1 & kk=0x65 & V0 & V1 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+}
+:LD V2, [I] is opcode=0xF & x=2 & kk=0x65 & V0 & V1 & V2 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+}
+:LD V3, [I] is opcode=0xF & x=3 & kk=0x65 & V0 & V1 & V2 & V3 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+}
+:LD V4, [I] is opcode=0xF & x=4 & kk=0x65 & V0 & V1 & V2 & V3 & V4 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+}
+:LD V5, [I] is opcode=0xF & x=5 & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+}
+:LD V6, [I] is opcode=0xF & x=6 & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+}
+:LD V7, [I] is opcode=0xF & x=7 & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+}
+:LD V8, [I] is opcode=0xF & x=8 & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+}
+:LD V9, [I] is opcode=0xF & x=9 & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+}
+:LD VA, [I] is opcode=0xF & x=A & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+}
+:LD VB, [I] is opcode=0xF & x=B & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+    VB = *:1 (I+11);
+}
+:LD VC, [I] is opcode=0xF & x=C & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+    VB = *:1 (I+11);
+    VC = *:1 (I+12);
+}
+:LD VD, [I] is opcode=0xF & x=D & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+    VB = *:1 (I+11);
+    VC = *:1 (I+12);
+    VD = *:1 (I+13);
+}
+:LD VE, [I] is opcode=0xF & x=E & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD & VE {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+    VB = *:1 (I+11);
+    VC = *:1 (I+12);
+    VD = *:1 (I+13);
+    VE = *:1 (I+14);
+}
+:LD VF, [I] is opcode=0xF & x=F & kk=0x65 & V0 & V1 & V2 & V3 & V4 & V5 & V6 & V7 & V8 & V9 & VA & VB & VC & VD & VE & VF {
+    V0 = *:1 I;
+    V1 = *:1 (I+1);
+    V2 = *:1 (I+2);
+    V3 = *:1 (I+3);
+    V4 = *:1 (I+4);
+    V5 = *:1 (I+5);
+    V6 = *:1 (I+6);
+    V7 = *:1 (I+7);
+    V8 = *:1 (I+8);
+    V9 = *:1 (I+9);
+    VA = *:1 (I+10);
+    VB = *:1 (I+11);
+    VC = *:1 (I+12);
+    VD = *:1 (I+13);
+    VE = *:1 (I+14);
+    VF = *:1 (I+15);
+}
