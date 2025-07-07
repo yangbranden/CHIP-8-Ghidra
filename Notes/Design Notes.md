@@ -339,6 +339,15 @@ SYS instruction
 	- this works because the SLEIGH compiler links the local operands from the display section (i.e. `addr`) to the unbound global fields in the pattern section (i.e. `nnn`) based on their order of appearance; i.e. `nnn` gets "bound" to `addr`
 	- `opcode=0x0` is a constraint, not a global operand being bound
 
+CLS instruction
+```
+# 00E0 - CLS; Clear the display
+:CLS is opcode=0x0 & nnn=0x0E0 {
+    clear_screen();
+}
+```
+- defined a `pcodeop`; essentially a blackbox to Ghidra (Ghidra doesn't know about its implementation, nor does it need to)
+
 RET instruction
 actually found a pretty good example for a 32bit arch in the SLEIGH docs: https://ghidra.re/ghidra_docs/languages/html/sleigh_constructors.html (section 7.7.2.5); difference is that CHIP-8 stack is growing up instead of down (so operations are inverse)
 ```
@@ -516,6 +525,41 @@ define pcodeop draw_sprite;
 Key-related instructions;
 
 considering defining a `wait_for_key` operation
+
+LD "F"
+```
+# Fx29 - LD F, Vx; Set I = location of sprite for digit Vx
+:LD "F", Vx is opcode=0xF & x & kk=0x29 {
+    local fontset_addr:2 = zext(Vx) * 5;
+    I = fontset_addr;
+}
+```
+- `0x0` is the starting address of the fontset in CHIP-8; each sprite is 5 bytes so multiply by 5
+- `"F"` is a string literal that is shown in the instruction; not an argument
+
+LD "B"
+```
+# Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
+:LD "B", Vx is opcode=0xF & x & kk=0x33 {
+    # TODO
+}
+```
+Representation of what's going on in memory: (if `I` is at `0x1000` and `Vx` has value `234`)
+```
+ Address | Value (Decimal) | Value (8-bit Binary)
++--------+-----------------+----------------------+
+|  ...   |       ...       |         ...          |
++--------+-----------------+----------------------+
+|  1000  |         2       |       00000010       |  <-- Hundreds digit
++--------+-----------------+----------------------+
+|  1001  |         3       |       00000011       |  <-- Tens digit
++--------+-----------------+----------------------+
+|  1002  |         4       |       00000100       |  <-- Ones digit
++--------+-----------------+----------------------+
+|  ...   |       ...       |         ...          |
++--------+-----------------+----------------------+
+```
+
 
 
 also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA

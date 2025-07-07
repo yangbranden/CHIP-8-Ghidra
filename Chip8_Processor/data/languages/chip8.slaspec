@@ -32,9 +32,11 @@ define token instr (16)
 attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 
 ## Custom operations
-define pcodeop rand;            # generate random number 0-255 (Ghidra doesn't need to know)
+# Ghidra does not know (nor does it need to know) about the implementation of these operations
+define pcodeop clear_screen;    # clear the screen
+define pcodeop rand;            # generate random number 0-255
 define pcodeop get_key_press;   # get current key press
-define pcodeop draw_sprite;     # draw sprite onto the screen (basically handle logic for DRW instruction)
+define pcodeop draw_sprite;     # draw sprite onto the screen
 
 ## Macros
 macro set_flag(value) {
@@ -48,6 +50,11 @@ macro set_flag(value) {
 # 0nnn - SYS addr; Jump to a machine code routine at addr
 :SYS addr is opcode=0x0 & nnn {
     goto addr;
+}
+
+# 00E0 - CLS; Clear the display
+:CLS is opcode=0x0 & nnn=0x0E0 {
+    clear_screen();
 }
 
 # 00EE - RET; Return from a subroutine
@@ -216,13 +223,20 @@ macro set_flag(value) {
 }
 
 # Fx29 - LD F, Vx; Set I = location of sprite for digit Vx
-:LD F, Vx is opcode=0xF & x & kk=0x29 {
-    # TODO
+:LD "F", Vx is opcode=0xF & x & kk=0x29 {
+    local fontset_addr:2 = zext(Vx) * 5;
+    I = fontset_addr;
 }
 
 # Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
-:LD B, Vx is opcode=0xF & x & kk=0x33 {
-    # TODO
+:LD "B", Vx is opcode=0xF & x & kk=0x33 {
+    local hundreds = Vx / 100;
+    local tens = (Vx / 10) % 10;
+    local ones = Vx % 10;
+
+    *:1 I = hundreds;
+    *:1 (I+1) = tens;
+    *:1 (I+2) = ones;
 }
 
 # Fx55 - LD [I], Vx; Store registers V0 through Vx in memory starting at location I
