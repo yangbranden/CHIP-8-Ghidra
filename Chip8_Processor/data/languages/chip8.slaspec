@@ -13,8 +13,6 @@ define register offset=0x00 size=1 [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD V
 define register offset=0x10 size=2 [ SP PC I ];
 # Other 8-bit registers (timer registers)
 define register offset=0x14 size=1 [ DT ST ];
-# Vx and Vy are used to refer to registers
-attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 
 
 ## Instruction format
@@ -29,9 +27,19 @@ define token instr (16)
     kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
 ;
 
+## Additional context
+# Vx and Vy are used to refer to registers
+attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
 
-## Variables and Macros
-# TODO (I will need to define some more things probably)
+## Custom operations
+define pcodeop rand;            # generate random number 0-255 (Ghidra doesn't need to know)
+define pcodeop get_key_press;   # get current key press
+define pcodeop draw_sprite;     # draw sprite onto the screen (basically handle logic for DRW instruction)
+
+## Macros
+macro set_flag(value) {
+    VF = value:1;
+}
 
 
 ## Instructions
@@ -87,91 +95,143 @@ define token instr (16)
 }
 
 # 8xy0 - LD Vx, Vy; Set Vx = Vy
-:LD Vx, Vy is opcode=0x8 & x & y & n=0 {
+:LD Vx, Vy is opcode=0x8 & x & y & n=0x0 {
     Vx = Vy;
 }
 
 # 8xy1 - OR Vx, Vy; Set Vx = Vx OR Vy
-:OR Vx, Vy is opcode=0x8 & x & y & n=1 {
+:OR Vx, Vy is opcode=0x8 & x & y & n=0x1 {
     Vx = Vx | Vy;
 }
 
 # 8xy2 - AND Vx, Vy; Set Vx = Vx AND Vy
-:AND Vx, Vy is opcode=0x8 & x & y & n=2 {
+:AND Vx, Vy is opcode=0x8 & x & y & n=0x2 {
     Vx = Vx & Vy;
 }
 
 # 8xy3 - XOR Vx, Vy; Set Vx = Vx XOR Vy
-:XOR Vx, Vy is opcode=0x8 & x & y & n=3 {
+:XOR Vx, Vy is opcode=0x8 & x & y & n=0x3 {
     Vx = Vx ^ Vy;
 }
 
 # 8xy4 - ADD Vx, Vy; Set Vx = Vx + Vy, set VF = carry
-:ADD Vx, Vy is opcode=0x8 & x & y & n=4 {
-    Vx = Vx & Vy;
-    # TODO: flag stuff
+:ADD Vx, Vy is opcode=0x8 & x & y & n=0x4 {
+    Vx = Vx + Vy;
+    local flag:1 = carry(Vx, Vy);
+    set_flag(flag);
 }
 
 # 8xy5 - SUB Vx, Vy; Set Vx = Vx - Vy, set VF = NOT borrow
-# TODO
+:SUB Vx, Vy is opcode=0x8 & x & y & n=0x5 {
+    local flag:1 = Vx > Vy;
+    set_flag(flag);
+    Vx = Vx - Vy;
+}
 
 # 8xy6 - SHR Vx {, Vy}; Set Vx = Vx SHR 1
-# TODO
+:SHR Vx, Vy is opcode=0x8 & x & y & n=0x6 {
+    local flag:1 = Vx & 1;
+    set_flag(flag);
+    Vx = Vx >> 1;
+}
 
 # 8xy7 - SUBN Vx, Vy; Set Vx = Vy - Vx, set VF = NOT borrow
-# TODO
+:SUBN Vx, Vy is opcode=0x8 & x & y & n=0x7 {
+    local flag:1 = Vy > Vx;
+    set_flag(flag);
+    Vx = Vy - Vx;
+}
 
 # 8xyE - SHL Vx {, Vy}; Set Vx = Vx SHL 1
-# TODO
+:SHL Vx, Vy is opcode=0x8 & x & y & n=0xE {
+    local flag:1 = Vx & 1;
+    set_flag(flag);
+    Vx = Vx << 1;
+}
 
 # 9xy0 - SNE Vx, Vy; Skip next instruction if Vx != Vy
-# TODO
+:SNE Vx, Vy is opcode=0x9 & x & y & n=0x0 {
+    if (Vx != Vy) goto (inst_next + 2);
+}
 
 # Annn - LD I, addr; Set I = nnn
-# TODO
+:LD I, addr is opcode=0xA & nnn {
+    I = zext(addr);
+}
 
 # Bnnn - JP V0, addr; Jump to location nnn + V0
-# TODO
+:JP V0, addr is opcode=0xB & nnn {
+    local tmp:2 = zext(addr) + zext(V0);
+    goto tmp;
+}
 
 # Cxkk - RND Vx, byte; Set Vx = random byte AND kk
-# TODO
+:RND Vx, byte is opcode=0xC & kk {
+    local tmp:1 = rand() & kk;
+    Vx = tmp;
+}
 
 # Dxyn - DRW Vx, Vy, nibble; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
-# TODO
+:DRW Vx, Vy, nibble is opcode=0xD & x & y & n & I {
+    local flag:1 = draw_sprite(I, Vx, Vy, nibble);
+    set_flag(flag);
+}
 
 # Ex9E - SKP Vx; Skip next instruction if key with the value of Vx is pressed
-# TODO
+:SKP Vx is opcode=0xE & x & kk=0x9E {
+    local key_press:1 = get_key_press();
+    if (key_press == Vx) goto (inst_next + 2);
+}
 
 # ExA1 - SKNP Vx; Skip next instruction if key with the value of Vx is not pressed
-# TODO
+:SKNP Vx is opcode=0xE & x & kk=0xA1 {
+    local key_press:1 = get_key_press();
+    if (key_press != Vx) goto (inst_next + 2);
+}
 
 # Fx07 - LD Vx, DT; Set Vx = delay timer value
-# TODO
+:LD Vx, DT is opcode=0xF & x & kk=0x07 {
+    Vx = DT;
+}
 
 # Fx0A - LD Vx, K; Wait for a key press, store the value of the key in Vx
-# TODO
+:LD Vx is opcode=0xF & x & kk=0x0A {
+    local key_press:1 = get_key_press();
+    Vx = key_press;
+}
 
 # Fx15 - LD DT, Vx; Set delay timer = Vx
-# TODO
+:LD DT, Vx is opcode=0xF & x & kk=0x15 {
+    DT = Vx;
+}
 
 # Fx18 - LD ST, Vx; Set sound timer = Vx
-# TODO
+:LD ST, Vx is opcode=0xF & x & kk=0x18 {
+    ST = Vx;
+}
 
 # Fx1E - ADD I, Vx; Set I = I + Vx
-# TODO
+:ADD I, Vx is opcode=0xF & x & kk=0x1E {
+    I = I + Vx;
+}
 
 # Fx29 - LD F, Vx; Set I = location of sprite for digit Vx
-# TODO
+:LD F, Vx is opcode=0xF & x & kk=0x29 {
+    # TODO
+}
 
 # Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
-# TODO
+:LD B, Vx is opcode=0xF & x & kk=0x33 {
+    # TODO
+}
 
 # Fx55 - LD [I], Vx; Store registers V0 through Vx in memory starting at location I
-# TODO
+:LD [I], Vx is opcode=0xF & x & kk=0x55 {
+    # TODO
+}
 
 # Fx65 - LD Vx, [I]; Read registers V0 through Vx from memory starting at location I
-# TODO
-
-
-# TODO: finish writing the logic for the disassembler
+:LD Vx, [I] is opcode=0xF & x & kk=0x65 {
+    # TODO
+}
 

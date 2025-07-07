@@ -380,7 +380,142 @@ CALL instruction
 ```
 - again, spec says increment first and THEN push to stack; that logic doesn't make sense to me
 
+SE instruction (byte comparison)
+```
+:SE Vx, byte is opcode=0x3 & x & kk {
+    if (Vx == byte) goto (inst_next + 2);
+}
+```
+- apparently `inst_next` is a symbol predefined to be equal to the address of the following instruction
+- other than this, for these next couple instructions, only thing I learned was that it is acceptable to reuse the same mnemonic so long as the operands are different (it can differentiate between registers and immediate values given context)
 
+SNE (byte) and SE (register) instructions
+```
+# 4xkk - SNE Vx, byte; Skip next instruction if Vx != kk
+:SNE Vx, byte is opcode=0x4 & x & kk {
+    if (Vx != byte) goto (inst_next + 2);
+}
+
+# 5xy0 - SE Vx, Vy; Skip next instruction if Vx = Vy
+:SE Vx, Vy is opcode=0x5 & x & y {
+    if (Vx == Vy) goto (inst_next + 2);
+}
+```
+- nothing new here
+
+The next instructions up until this ADD are self-explanatory;
+ADD Vx Vy
+```
+:ADD Vx, Vy is opcode=0x8 & x & y & n=0x4 {
+    Vx = Vx + Vy;
+    local flag:1 = carry(Vx, Vy);
+    set_flag(flag);
+}
+```
+- `carry(v0, v1)` is a SLEIGH operator that is "True if adding v0 and v1 would produce an unsigned carry"
+- For this, we perform the operation FIRST, and then calculate the flag
+I defined this macro for setting flag:
+```
+macro set_flag(value) {
+    VF = value:1;
+}
+```
+
+SUB Vx Vy
+```
+# 8xy5 - SUB Vx, Vy; Set Vx = Vx - Vy, set VF = NOT borrow
+:SUB Vx, Vy is opcode=0x8 & x & y & n=0x5 {
+    Vx = Vx - Vy;
+    local flag:1 = Vx > Vy;
+    set_flag(flag);
+}
+```
+- "NOT borrow" = in subtraction, a "borrow" is needed when a larger number is subtracted from a smaller one
+- SUBN basically same instruction just inverse (Vy - Vx instead of Vx - Vy)
+- For these, we calculate flag FIRST, then perform the operation
+
+SHR
+```
+# 8xy6 - SHR Vx {, Vy}; Set Vx = Vx SHR 1
+:SHR Vx, Vy is opcode=0x8 & x & y & n=0x6 {
+    local flag:1 = Vx & 1;
+    set_flag(flag);
+    Vx = Vx >> 1;
+}
+```
+- according to spec: "If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2."
+- SHL same but opposite
+- For these, we calculate flag FIRST, then perform the operation
+- Also, I'm not sure what `Vy`'s involvement in these instructions are
+
+LD `I` addr
+```
+# Annn - LD I, addr; Set I = nnn
+:LD I, addr is opcode=0xA & nnn {
+    I = zext(addr);
+}
+```
+- only thing to really note here is `zext(addr)`; without `zext` I believe it is done implicitly, but it is more verbose to add it here
+
+JP V0, addr
+```
+# Bnnn - JP V0, addr; Jump to location nnn + V0
+:JP V0, addr is opcode=0xB & nnn {
+    local tmp:2 = zext(addr) + zext(V0);
+    goto tmp;
+}
+```
+- this is the same thing, only thing is we are `zext()`'ing the 8-bit `V0` and the 12-bit `nnn`
+
+RND Vx, byte
+```
+# Cxkk - RND Vx, byte; Set Vx = random byte AND kk
+:RND Vx, byte is opcode=0xC & kk {
+    local tmp:1 = rand() & kk;
+    Vx = tmp;
+}
+```
+need to define a custom `rand` operator; Ghidra doesn't care about the implementation (Ghidra treats `pcodeop`'s as black boxes)
+```
+define pcodeop rand;
+```
+
+SKP and SKNP instructions
+```
+# Ex9E - SKP Vx; Skip next instruction if key with the value of Vx is pressed
+:SKP Vx is opcode=0xE & x & kk=0x9E {
+    local key_press:1 = get_key_press();
+    if (key_press == Vx) goto (inst_next + 2);
+}
+
+# ExA1 - SKNP Vx; Skip next instruction if key with the value of Vx is not pressed
+:SKNP Vx is opcode=0xE & x & kk=0xA1 {
+    local key_press:1 = get_key_press();
+    if (key_press != Vx) goto (inst_next + 2);
+}
+```
+I added a `pcodeop` (again, black box so Ghidra doesn't care) to get the current key pressed;
+```
+define pcodeop get_key_press;
+```
+
+DRW
+This is probably the most complicated instruction in actual implementation, but since Ghidra just treats everything as a black box, we can just `define pcodeop` and not care about it
+```
+# Dxyn - DRW Vx, Vy, nibble; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+:DRW Vx, Vy, nibble is opcode=0xD & x & y & n & I {
+    local flag:1 = draw_sprite(I, Vx, Vy, nibble);
+    set_flag(flag);
+}
+```
+and we just define:
+```
+define pcodeop draw_sprite;
+```
+
+Key-related instructions;
+
+considering defining a `wait_for_key` operation
 
 
 also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA
