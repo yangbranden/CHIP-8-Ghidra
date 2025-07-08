@@ -577,4 +577,35 @@ OK I AM NOT REALLY SURE IF THIS ALL WORKS BECAUSE I HAVEN'T TESTED IT YET BUT EV
 also I'm skipping `opinion` file for now (and likely forever) because it seems unnecessary for my simple ISA
 
 ## Fixing everything
-TODO: there's definitely things that are broken
+OK first thing was that you can't jump to an arithmetic operation:
+```
+if (...) goto (inst_next + 2);
+```
+instead need to do this;
+```
+local inst_after:2 = inst_next + 2;
+if (...) goto inst_after;
+```
+- Third thing is that actually this doesn't work either and I need to find another workaround (TBD):
+```
+     [java] chip8.slaspec:82: varnode_symbol 'inst_after' (defined at chip8.slaspec:81) is wrong type (should be start, end, or operand) in goto destination
+```
+
+
+Second thing is that I'm stupid; the `attach` mechanism is to attach additional context to already-defined variables; not define new ones
+```
+attach variables [ Vx Vy ] [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF ];
+```
+since I like having `Vx` and `Vy`, I'm just gonna rename the definition of the token to this:
+```
+define token instr (16)
+    opcode_full = (0,15)        # The full 16-bit instruction (some instructions interpret all)
+    opcode      = (12,15)       # Opcode: Highest 4 bits
+    nnn         = (0,11)        # nnn or addr: A 12-bit value, the lowest 12 bits of the instruction
+    n           = (0,3)         # n or nibble: A 4-bit value, the lowest 4 bits of the instruction
+    Vx           = (8,11)       # x: A 4-bit value, the lower 4 bits of the high byte of the instruction
+    Vy           = (4,7)        # y: A 4-bit value, the upper 4 bits of the low byte of the instruction
+    kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
+;
+```
+

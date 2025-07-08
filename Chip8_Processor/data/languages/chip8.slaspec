@@ -22,8 +22,8 @@ define token instr (16)
     opcode      = (12,15)       # Opcode: Highest 4 bits
     nnn         = (0,11)        # nnn or addr: A 12-bit value, the lowest 12 bits of the instruction
     n           = (0,3)         # n or nibble: A 4-bit value, the lowest 4 bits of the instruction
-    x           = (8,11)        # x: A 4-bit value, the lower 4 bits of the high byte of the instruction
-    y           = (4,7)         # y: A 4-bit value, the upper 4 bits of the low byte of the instruction
+    Vx           = (8,11)       # x: A 4-bit value, the lower 4 bits of the high byte of the instruction
+    Vy           = (4,7)        # y: A 4-bit value, the upper 4 bits of the low byte of the instruction
     kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
 ;
 
@@ -39,7 +39,6 @@ define pcodeop get_key_press;   # get current key press
 define pcodeop draw_sprite;     # draw sprite onto the screen
 
 ## Macros
-@include "chip8.sinc"
 macro set_flag(value) {
     VF = value:1;
 }
@@ -78,88 +77,92 @@ macro set_flag(value) {
 }
 
 # 3xkk - SE Vx, byte; Skip next instruction if Vx = kk
-:SE Vx, byte is opcode=0x3 & x & kk {
-    if (Vx == byte) goto (inst_next + 2);
+:SE Vx, byte is opcode=0x3 & Vx & kk {
+    local inst_after:2 = inst_next + 2;
+    if (Vx == byte) goto inst_after;
 }
 
 # 4xkk - SNE Vx, byte; Skip next instruction if Vx != kk
-:SNE Vx, byte is opcode=0x4 & x & kk {
-    if (Vx != byte) goto (inst_next + 2);
+:SNE Vx, byte is opcode=0x4 & Vx & kk {
+    local inst_after:2 = inst_next + 2;
+    if (Vx != byte) goto inst_after;
 }
 
 # 5xy0 - SE Vx, Vy; Skip next instruction if Vx = Vy
-:SE Vx, Vy is opcode=0x5 & x & y & n=0 {
-    if (Vx == Vy) goto (inst_next + 2);
+:SE Vx, Vy is opcode=0x5 & Vx & Vy & n=0 {
+    local inst_after:2 = inst_next + 2;
+    if (Vx == Vy) goto inst_after;
 }
 
 # 6xkk - LD Vx, byte; Set Vx = kk
-:LD Vx, byte is opcode=0x6 & x & kk {
+:LD Vx, byte is opcode=0x6 & Vx & kk {
     Vx = byte;
 }
 
 # 7xkk - ADD Vx, byte; Set Vx = Vx + kk
-:ADD Vx, byte is opcode=0x7 & x & kk {
+:ADD Vx, byte is opcode=0x7 & Vx & kk {
     Vx = Vx + byte;
 }
 
 # 8xy0 - LD Vx, Vy; Set Vx = Vy
-:LD Vx, Vy is opcode=0x8 & x & y & n=0x0 {
+:LD Vx, Vy is opcode=0x8 & Vx & Vy & n=0x0 {
     Vx = Vy;
 }
 
 # 8xy1 - OR Vx, Vy; Set Vx = Vx OR Vy
-:OR Vx, Vy is opcode=0x8 & x & y & n=0x1 {
+:OR Vx, Vy is opcode=0x8 & Vx & Vy & n=0x1 {
     Vx = Vx | Vy;
 }
 
 # 8xy2 - AND Vx, Vy; Set Vx = Vx AND Vy
-:AND Vx, Vy is opcode=0x8 & x & y & n=0x2 {
+:AND Vx, Vy is opcode=0x8 & Vx & Vy & n=0x2 {
     Vx = Vx & Vy;
 }
 
 # 8xy3 - XOR Vx, Vy; Set Vx = Vx XOR Vy
-:XOR Vx, Vy is opcode=0x8 & x & y & n=0x3 {
+:XOR Vx, Vy is opcode=0x8 & Vx & Vy & n=0x3 {
     Vx = Vx ^ Vy;
 }
 
 # 8xy4 - ADD Vx, Vy; Set Vx = Vx + Vy, set VF = carry
-:ADD Vx, Vy is opcode=0x8 & x & y & n=0x4 {
+:ADD Vx, Vy is opcode=0x8 & Vx & Vy & n=0x4 {
     Vx = Vx + Vy;
     local flag:1 = carry(Vx, Vy);
     set_flag(flag);
 }
 
 # 8xy5 - SUB Vx, Vy; Set Vx = Vx - Vy, set VF = NOT borrow
-:SUB Vx, Vy is opcode=0x8 & x & y & n=0x5 {
+:SUB Vx, Vy is opcode=0x8 & Vx & Vy & n=0x5 {
     local flag:1 = Vx > Vy;
     set_flag(flag);
     Vx = Vx - Vy;
 }
 
 # 8xy6 - SHR Vx {, Vy}; Set Vx = Vx SHR 1
-:SHR Vx, Vy is opcode=0x8 & x & y & n=0x6 {
+:SHR Vx, Vy is opcode=0x8 & Vx & Vy & n=0x6 {
     local flag:1 = Vx & 1;
     set_flag(flag);
     Vx = Vx >> 1;
 }
 
 # 8xy7 - SUBN Vx, Vy; Set Vx = Vy - Vx, set VF = NOT borrow
-:SUBN Vx, Vy is opcode=0x8 & x & y & n=0x7 {
+:SUBN Vx, Vy is opcode=0x8 & Vx & Vy & n=0x7 {
     local flag:1 = Vy > Vx;
     set_flag(flag);
     Vx = Vy - Vx;
 }
 
 # 8xyE - SHL Vx {, Vy}; Set Vx = Vx SHL 1
-:SHL Vx, Vy is opcode=0x8 & x & y & n=0xE {
+:SHL Vx, Vy is opcode=0x8 & Vx & Vy & n=0xE {
     local flag:1 = Vx & 1;
     set_flag(flag);
     Vx = Vx << 1;
 }
 
 # 9xy0 - SNE Vx, Vy; Skip next instruction if Vx != Vy
-:SNE Vx, Vy is opcode=0x9 & x & y & n=0x0 {
-    if (Vx != Vy) goto (inst_next + 2);
+:SNE Vx, Vy is opcode=0x9 & Vx & Vy & n=0x0 {
+    local inst_after:2 = inst_next + 2;
+    if (Vx != Vy) goto inst_after;
 }
 
 # Annn - LD I, addr; Set I = nnn
@@ -180,57 +183,59 @@ macro set_flag(value) {
 }
 
 # Dxyn - DRW Vx, Vy, nibble; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
-:DRW Vx, Vy, nibble is opcode=0xD & x & y & n & I {
+:DRW Vx, Vy, nibble is opcode=0xD & Vx & Vy & n & I {
     local flag:1 = draw_sprite(I, Vx, Vy, nibble);
     set_flag(flag);
 }
 
 # Ex9E - SKP Vx; Skip next instruction if key with the value of Vx is pressed
-:SKP Vx is opcode=0xE & x & kk=0x9E {
+:SKP Vx is opcode=0xE & Vx & kk=0x9E {
     local key_press:1 = get_key_press();
-    if (key_press == Vx) goto (inst_next + 2);
+    local inst_after:2 = inst_next + 2;
+    if (key_press == Vx) goto inst_after;
 }
 
 # ExA1 - SKNP Vx; Skip next instruction if key with the value of Vx is not pressed
-:SKNP Vx is opcode=0xE & x & kk=0xA1 {
+:SKNP Vx is opcode=0xE & Vx & kk=0xA1 {
     local key_press:1 = get_key_press();
-    if (key_press != Vx) goto (inst_next + 2);
+    local inst_after:2 = inst_next + 2;
+    if (key_press != Vx) goto inst_after;
 }
 
 # Fx07 - LD Vx, DT; Set Vx = delay timer value
-:LD Vx, DT is opcode=0xF & x & kk=0x07 {
+:LD Vx, DT is opcode=0xF & Vx & kk=0x07 {
     Vx = DT;
 }
 
 # Fx0A - LD Vx, K; Wait for a key press, store the value of the key in Vx
-:LD Vx is opcode=0xF & x & kk=0x0A {
+:LD Vx is opcode=0xF & Vx & kk=0x0A {
     local key_press:1 = get_key_press();
     Vx = key_press;
 }
 
 # Fx15 - LD DT, Vx; Set delay timer = Vx
-:LD DT, Vx is opcode=0xF & x & kk=0x15 {
+:LD DT, Vx is opcode=0xF & Vx & kk=0x15 {
     DT = Vx;
 }
 
 # Fx18 - LD ST, Vx; Set sound timer = Vx
-:LD ST, Vx is opcode=0xF & x & kk=0x18 {
+:LD ST, Vx is opcode=0xF & Vx & kk=0x18 {
     ST = Vx;
 }
 
 # Fx1E - ADD I, Vx; Set I = I + Vx
-:ADD I, Vx is opcode=0xF & x & kk=0x1E {
+:ADD I, Vx is opcode=0xF & Vx & kk=0x1E {
     I = I + Vx;
 }
 
 # Fx29 - LD F, Vx; Set I = location of sprite for digit Vx
-:LD "F", Vx is opcode=0xF & x & kk=0x29 {
+:LD "F", Vx is opcode=0xF & Vx & kk=0x29 {
     local fontset_addr:2 = zext(Vx) * 5;
     I = fontset_addr;
 }
 
 # Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2
-:LD "B", Vx is opcode=0xF & x & kk=0x33 {
+:LD "B", Vx is opcode=0xF & Vx & kk=0x33 {
     local hundreds = Vx / 100;
     local tens = (Vx / 10) % 10;
     local ones = Vx % 10;
