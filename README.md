@@ -49,12 +49,10 @@ Other Resources
 	- initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
 - [x] Write PSPEC file
 	- definition for default register values and specific register names for common processor functions (such as the program counter and stack pointer)
-- [ ] Write CSPEC file
+- [x] Write CSPEC file
 	- compiler specification; define default aspects of your processor your compiler will use
-- [ ] Write SLASPEC and SINC files
+- [x] Write SLASPEC and SINC files
 	- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
-- [ ] (optional) Write OPINION file
-	- specify optional logic for sub-processor families and behaviors
 - [ ] Use the completed Ghidra processor to examine some ROMs
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
