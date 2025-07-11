@@ -1,5 +1,3 @@
-# Design Notes
-
 ## LDEFS file
 straightforward; just basic info about the architecture
 - Big endian
@@ -581,16 +579,25 @@ OK first thing was that you can't jump to an arithmetic operation:
 ```
 if (...) goto (inst_next + 2);
 ```
-instead need to do this;
+~~instead need to do this;~~
 ```
 local inst_after:2 = inst_next + 2;
 if (...) goto inst_after;
 ```
-- Third thing is that actually this doesn't work either and I need to find another workaround (TBD):
+so actually this doesn't work either;
+instead we need to create this:
 ```
-     [java] chip8.slaspec:82: varnode_symbol 'inst_after' (defined at chip8.slaspec:81) is wrong type (should be start, end, or operand) in goto destination
+# Used for instruction skips; essentially acts as a global variable
+inst_after: addr is epsilon [ addr = inst_next + 2; ] { 
+    export *:2 addr;
+}
 ```
-
+- defines a constructor called `inst_after`
+- defines `addr`, which is what we will return
+- `epsilon` is a special keyword that means the constructor doesn't match anything; purely logical constructor used to perform calculations or set context rather than matching a specific machine instruction pattern
+- display section (in square brackets `[]`) defines the value of `addr`
+- `export` is used to essentially "publish" the value;
+	- we are exporting a 2 byte address/pointer
 
 Second thing is that I'm stupid; the `attach` mechanism is to attach additional context to already-defined variables; not define new ones
 ```
@@ -608,4 +615,74 @@ define token instr (16)
     kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
 ;
 ```
+
+Third; important distinction between jumping to a variable itself vs. jumping to address pointed to by the variable;
+incorrect:
+```
+# Bnnn - JP V0, addr; Jump to location nnn + V0
+:JP V0, addr is opcode=0xB & nnn {
+    local tmp:2 = zext(addr) + zext(V0);
+    goto tmp;
+}
+```
+correct:
+```
+# Bnnn - JP V0, addr; Jump to location nnn + V0
+:JP V0, addr is opcode=0xB & nnn {
+    local tmp:2 = zext(addr) + zext(V0);
+    goto [tmp];
+}
+```
+Note: this does not work for `inst_after` because `inst_next` (which we are using to define `inst_after` does not exist at runtime; 
+- SLEIGH operates in "disassembly-time" (i.e. when GHIDRA is parsing the binary file) as well as "runtime" (i.e. simulates the CPU's state)
+
+TIL;
+Disassembly time
+- The display section (`[...]`) operates primarily in this context
+Runtime context
+- The p-code block (`{...}`) operates in this context
+
+Fourth; this instruction had several issues; 
+```
+:DRW Vx, Vy, nibble is opcode=0xD & Vx & Vy & n & I {
+    local flag:1 = draw_sprite(I, Vx, Vy, nibble);
+    set_flag(flag);
+}
+```
+- cannot have `I` in the pattern matching section because it doesn't appear in the display section
+- symbol name; need to change `nibble` to `n`
+- need to explicitly define what `I` we are looking at; i.e. `*:2 I`
+
+Fifth; bunch of renames because NO we cannot have mismatched variable names from display section --> pattern matching section
+
+Sixth: "`Main section: Could not resolve at least 1 variable size`"
+so it turns out that fields defined by the instruction format are NOT counted as being varnodes; so we need to properly define them as varnodes;
+i.e. instead of 
+```
+# 0nnn - SYS addr; Jump to a machine code routine at addr
+:SYS nnn is opcode=0x0 & nnn {
+    goto nnn;
+}
+```
+we need to do
+```
+# 0nnn - SYS addr; Jump to a machine code routine at addr
+:SYS nnn is opcode=0x0 & nnn {
+    local addr:2 = nnn;
+    goto [addr];
+}
+```
+(this also includes the change from earlier; difference between `addr` and `[addr]`)
+
+Apparently, we can also use `zext()` to create a temporary varnode
+
+
+omg it compiled
+
+I guess it says it's still inefficient or something but I'll fix it tmrw
+```
+"6 unnecessary extensions/truncations were converted to copies"
+```
+- so apparently this means that it found 6 places where I could've just used `zext()` instead of `local tmp:2 = ...` and such; basically optimizations. I'm gonna leave it as is where it makes sense to do so for verbosity/readability
+
 
