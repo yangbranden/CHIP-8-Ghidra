@@ -21,29 +21,29 @@ I defined all the registers:
   <programcounter register="PC"/>
   <register_data>
     <!-- Index register (16-bit) -->
-    <register name="I">
-    <!-- Stack pointer (8-bit) -->
-    <register name="SP">
+    <register name="I"/>
+    <!-- Stack pointer (16-bit) -->
+    <register name="SP"/>
     <!-- Delay and sound timers (8-bit) -->
-    <register name="DT">
-    <register name="ST">
+    <register name="DT"/>
+    <register name="ST"/>
     <!-- General purpose registers (8-bit) -->
-    <register name="V0">
-    <register name="V1">
-    <register name="V2">
-    <register name="V3">
-    <register name="V4">
-    <register name="V5">
-    <register name="V6">
-    <register name="V7">
-    <register name="V8">
-    <register name="V9">
-    <register name="VA">
-    <register name="VB">
-    <register name="VC">
-    <register name="VD">
-    <register name="VE">
-    <register name="VF">
+    <register name="V0"/>
+    <register name="V1"/>
+    <register name="V2"/>
+    <register name="V3"/>
+    <register name="V4"/>
+    <register name="V5"/>
+    <register name="V6"/>
+    <register name="V7"/>
+    <register name="V8"/>
+    <register name="V9"/>
+    <register name="VA"/>
+    <register name="VB"/>
+    <register name="VC"/>
+    <register name="VD"/>
+    <register name="VE"/>
+    <register name="VF"/>
   </register_data>
 ```
 
@@ -84,6 +84,8 @@ Then defined regions of memory:
   </default_memory_blocks>
 ```
 this section in particular I didn't see in `x86.pspec` or some of the other `.pspec` files I looked at, so I'm not sure if this is actually necessary to define here; I guess doesn't hurt to have more well-though-out definitions at this point
+- apparently need to also define each memory block as `initialized="true"` or `initialized="false"`
+- i also went ahead and added `mode="r"` and `mode="rw"` for more verbosity
 
 ## CSPEC file
 OK for this file I'm quite confused.
@@ -684,5 +686,4 @@ I guess it says it's still inefficient or something but I'll fix it tmrw
 "6 unnecessary extensions/truncations were converted to copies"
 ```
 - so apparently this means that it found 6 places where I could've just used `zext()` instead of `local tmp:2 = ...` and such; basically optimizations. I'm gonna leave it as is where it makes sense to do so for verbosity/readability
-
 

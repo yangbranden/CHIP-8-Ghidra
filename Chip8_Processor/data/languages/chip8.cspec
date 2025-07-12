@@ -2,7 +2,7 @@
 
 <compiler_spec>
   <data_organization>
-	<pointer_size value="2" />
+    <pointer_size value="2"/>
   </data_organization>
   <global>
     <range space="ram"/>

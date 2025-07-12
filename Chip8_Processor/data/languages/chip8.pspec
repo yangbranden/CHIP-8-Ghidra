@@ -30,28 +30,28 @@
     <register name="VF"/>
   </register_data>
   <default_symbols>
-    <symbol name="_start" address="ram:0x200" entry="true"/>
+    <symbol name="_start" address="0x200" entry="true"/>
     <!-- Font set -->
-    <symbol name="FONTSET_0" address="ram:0x000"/>
-    <symbol name="FONTSET_1" address="ram:0x005"/>
-    <symbol name="FONTSET_2" address="ram:0x00a"/>
-    <symbol name="FONTSET_3" address="ram:0x00f"/>
-    <symbol name="FONTSET_4" address="ram:0x014"/>
-    <symbol name="FONTSET_5" address="ram:0x019"/>
-    <symbol name="FONTSET_6" address="ram:0x01e"/>
-    <symbol name="FONTSET_7" address="ram:0x023"/>
-    <symbol name="FONTSET_8" address="ram:0x028"/>
-    <symbol name="FONTSET_9" address="ram:0x02d"/>
-    <symbol name="FONTSET_A" address="ram:0x032"/>
-    <symbol name="FONTSET_B" address="ram:0x037"/>
-    <symbol name="FONTSET_C" address="ram:0x03c"/>
-    <symbol name="FONTSET_D" address="ram:0x041"/>
-    <symbol name="FONTSET_E" address="ram:0x046"/>
-    <symbol name="FONTSET_F" address="ram:0x04b"/>
+    <symbol name="FONTSET_0" address="0x000"/>
+    <symbol name="FONTSET_1" address="0x005"/>
+    <symbol name="FONTSET_2" address="0x00a"/>
+    <symbol name="FONTSET_3" address="0x00f"/>
+    <symbol name="FONTSET_4" address="0x014"/>
+    <symbol name="FONTSET_5" address="0x019"/>
+    <symbol name="FONTSET_6" address="0x01e"/>
+    <symbol name="FONTSET_7" address="0x023"/>
+    <symbol name="FONTSET_8" address="0x028"/>
+    <symbol name="FONTSET_9" address="0x02d"/>
+    <symbol name="FONTSET_A" address="0x032"/>
+    <symbol name="FONTSET_B" address="0x037"/>
+    <symbol name="FONTSET_C" address="0x03c"/>
+    <symbol name="FONTSET_D" address="0x041"/>
+    <symbol name="FONTSET_E" address="0x046"/>
+    <symbol name="FONTSET_F" address="0x04b"/>
   </default_symbols>
   <default_memory_blocks>
-    <memory_block name="FONTSET" start_address="ram:0x000" length="0x50" initialized="true"/>
-    <memory_block name="STACK" start_address="ram:0x050" length="0x100" initialized="true"/>
-    <memory_block name="PROGRAM" start_address="ram:0x200" length="0xe00" initialized="true"/>
+    <memory_block name="FONTSET" start_address="0x000" length="0x50" initialized="true" mode="r"/>
+    <memory_block name="STACK" start_address="0x050" length="0x100" initialized="false" mode="rw"/>
+    <memory_block name="PROGRAM" start_address="0x200" length="0xe00" initialized="false" mode="rw"/>
   </default_memory_blocks>
 </processor_spec>
