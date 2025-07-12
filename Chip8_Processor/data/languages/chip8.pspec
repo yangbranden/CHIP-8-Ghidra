@@ -5,29 +5,29 @@
   <programcounter register="PC"/>
   <register_data>
     <!-- Index register (16-bit) -->
-    <register name="I">
+    <register name="I"/>
     <!-- Stack pointer (16-bit) -->
-    <register name="SP">
+    <register name="SP"/>
     <!-- Delay and sound timers (8-bit) -->
-    <register name="DT">
-    <register name="ST">
+    <register name="DT"/>
+    <register name="ST"/>
     <!-- General purpose registers (8-bit) -->
-    <register name="V0">
-    <register name="V1">
-    <register name="V2">
-    <register name="V3">
-    <register name="V4">
-    <register name="V5">
-    <register name="V6">
-    <register name="V7">
-    <register name="V8">
-    <register name="V9">
-    <register name="VA">
-    <register name="VB">
-    <register name="VC">
-    <register name="VD">
-    <register name="VE">
-    <register name="VF">
+    <register name="V0"/>
+    <register name="V1"/>
+    <register name="V2"/>
+    <register name="V3"/>
+    <register name="V4"/>
+    <register name="V5"/>
+    <register name="V6"/>
+    <register name="V7"/>
+    <register name="V8"/>
+    <register name="V9"/>
+    <register name="VA"/>
+    <register name="VB"/>
+    <register name="VC"/>
+    <register name="VD"/>
+    <register name="VE"/>
+    <register name="VF"/>
   </register_data>
   <default_symbols>
     <symbol name="_start" address="ram:0x200" entry="true"/>
@@ -50,8 +50,8 @@
     <symbol name="FONTSET_F" address="ram:0x04b"/>
   </default_symbols>
   <default_memory_blocks>
-    <memory_block name="FONTSET" start_address="ram:0x000" length="0x50"/>
-    <memory_block name="stack" start_address="ram:0x050" length="0x100"/>
-    <memory_block name="program" start_address="ram:0x200" length="0xe00"/>
+    <memory_block name="FONTSET" start_address="ram:0x000" length="0x50" initialized="true"/>
+    <memory_block name="STACK" start_address="ram:0x050" length="0x100" initialized="true"/>
+    <memory_block name="PROGRAM" start_address="ram:0x200" length="0xe00" initialized="true"/>
   </default_memory_blocks>
 </processor_spec>
