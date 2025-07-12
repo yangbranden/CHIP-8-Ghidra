@@ -24,6 +24,16 @@ CHIP-8-Ghidra-Processor
 └── README.md: This file
 ```
 
+## Usage
+
+TODO: make this more descriptive (and add images)
+
+Download Eclipse and open up the `Chip8_Processor` folder as a project
+
+Right-click the `buildLanguage.xml` file > `Run As` > `1 Ant Build` to compile, or `3 Ghidra` to use
+
+When importing a CHIP-8 ROM program (`.ch8`), make sure to set the base address as `0x200`; all CHIP-8 ROMs assume a base address of `0x200`, but Ghidra isn't able to set that automatically with a processor. Currently looking into scripts or other methods of automatically setting base address.
+
 ## Resources
 Key Important Resources
 - [What CHIP-8 is](https://en.m.wikipedia.org/wiki/CHIP-8)
@@ -53,7 +63,10 @@ Other Resources
 	- compiler specification; define default aspects of your processor your compiler will use
 - [x] Write SLASPEC and SINC files
 	- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
-- [ ] Use the completed Ghidra processor to examine some ROMs
+- [X] Use the completed Ghidra processor to examine some ROMs
+- [ ] Design some scripts to facilitate better ROM program parsing
+	- automatically set base address to `0x200`
+	- be able to detect sprites in memory (currently just looks like bytes); probably able to do this with some sort of post-processing script
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule

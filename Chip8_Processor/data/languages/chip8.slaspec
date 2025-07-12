@@ -49,7 +49,8 @@ inst_after: addr is epsilon [ addr = inst_next + 2; ] {
 }
 
 ## Instructions
-# Following Cowgod's specification
+# Following Cowgod's specification:
+# http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
 # 0nnn - SYS addr; Jump to a machine code routine at addr
 :SYS nnn is opcode=0x0 & nnn {
