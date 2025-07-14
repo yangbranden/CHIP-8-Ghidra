@@ -1,3 +1,5 @@
+# Design Notes
+
 ## LDEFS file
 straightforward; just basic info about the architecture
 - Big endian
@@ -687,3 +689,4 @@ I guess it says it's still inefficient or something but I'll fix it tmrw
 ```
 - so apparently this means that it found 6 places where I could've just used `zext()` instead of `local tmp:2 = ...` and such; basically optimizations. I'm gonna leave it as is where it makes sense to do so for verbosity/readability
 
+OK nice so now it works, but you need to specify base address as `0x200`; since the processor itself is technically done, I am going to leave this document alone now and put additional things I am wanting to add now in [[Additional Functionality]]

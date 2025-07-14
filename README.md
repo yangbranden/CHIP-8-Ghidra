@@ -63,10 +63,11 @@ Other Resources
 	- compiler specification; define default aspects of your processor your compiler will use
 - [x] Write SLASPEC and SINC files
 	- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
-- [X] Use the completed Ghidra processor to examine some ROMs
-- [ ] Design some scripts to facilitate better ROM program parsing
-	- automatically set base address to `0x200`
-	- be able to detect sprites in memory (currently just looks like bytes); probably able to do this with some sort of post-processing script
+- [x] Use the completed Ghidra processor to examine some ROMs
+- [ ] Additional functionality (possible through scripting?)
+1. automatically set base address to `0x200` when importing `.ch8` file
+2. be able to detect sprites in memory (currently just looks like bytes)
+3. be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule
