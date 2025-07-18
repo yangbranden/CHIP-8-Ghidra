@@ -126,3 +126,4 @@ I want to know if there's a way to hard-code the values of these first 80 bytes 
 Questions/concerns:
 - Since Ghidra is a static analysis tool and this is information outside of the specific program file itself, does it make sense to do this at all?  
 - i.e. is hard-coding memory that is assumed to be used by the interpreter something that should be done in Ghidra? Or is this closer to the realm of dynamic analysis (and out of scope)?
+

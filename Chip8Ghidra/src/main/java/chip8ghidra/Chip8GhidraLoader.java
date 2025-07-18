@@ -31,6 +31,7 @@ import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.symbol.SourceType;
+import java.io.ByteArrayInputStream;
 
 /**
  * Provide class-level documentation that describes what this loader does.
@@ -39,6 +40,26 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 
 	// CHIP-8 programs are loaded into memory starting at 0x200
 	private static final long CHIP8_PROGRAM_START_OFFSET = 0x200;
+
+	// CHIP-8 Default Font Set
+	private static final byte[] CHIP8_FONTSET = {
+		(byte)0xF0, (byte)0x90, (byte)0x90, (byte)0x90, (byte)0xF0, // 0
+		(byte)0x20, (byte)0x60, (byte)0x20, (byte)0x20, (byte)0x70, // 1
+		(byte)0xF0, (byte)0x10, (byte)0xF0, (byte)0x80, (byte)0xF0, // 2
+		(byte)0xF0, (byte)0x10, (byte)0xF0, (byte)0x10, (byte)0xF0, // 3
+		(byte)0x90, (byte)0x90, (byte)0xF0, (byte)0x10, (byte)0x10, // 4
+		(byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x10, (byte)0xF0, // 5
+		(byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x90, (byte)0xF0, // 6
+		(byte)0xF0, (byte)0x10, (byte)0x20, (byte)0x40, (byte)0x40, // 7
+		(byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x90, (byte)0xF0, // 8
+		(byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x10, (byte)0xF0, // 9
+		(byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x90, (byte)0x90, // A
+		(byte)0xE0, (byte)0x90, (byte)0xE0, (byte)0x90, (byte)0xE0, // B
+		(byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0xF0, // C
+		(byte)0xE0, (byte)0x90, (byte)0x90, (byte)0x90, (byte)0xE0, // D
+		(byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x80, (byte)0xF0, // E
+		(byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x80, (byte)0x80  // F
+	};
 	
 	@Override
 	public String getName() {
@@ -65,35 +86,66 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 	protected void load(ByteProvider provider, LoadSpec loadSpec, List<Option> options,
 			Program program, TaskMonitor monitor, MessageLog log)
 			throws CancelledException, IOException {
-		// Get the program's memory manager
-		Memory memory = program.getMemory();
-
-		// Define the starting address for CHIP-8 programs
-		Address startAddress = program.getAddressFactory().getDefaultAddressSpace().getAddress(CHIP8_PROGRAM_START_OFFSET);
-
 		try {
-			// Create a memory block starting at 0x200
+			// Get the program's memory manager
+			Memory memory = program.getMemory();
+
+
+			// ========== Memory Block for CHIP-8 FONTSET ==========
+			// Define the starting address for the CHIP-8 font set as an Address object (at 0x000)
+			Address fontsetStart = program.getAddressFactory().getDefaultAddressSpace().getAddress(0x000);
+
+			// Create a memory block for the CHIP-8 font set
+			MemoryBlock fontsetBlock = memory.createInitializedBlock(
+				"CHIP8_FONTSET",
+				fontsetStart,
+				new ByteArrayInputStream(CHIP8_FONTSET),
+				CHIP8_FONTSET.length,
+				monitor,
+				false
+			);
+
+			// Set properties for the fontset memory block
+			fontsetBlock.setRead(true);
+			fontsetBlock.setWrite(false);
+			fontsetBlock.setExecute(false);
+
+			// Create labels for each character in the font set
+			for (int i = 0; i < CHIP8_FONTSET.length / 5; i++) {
+				Address charAddress = fontsetStart.add(i * 5);
+				String charLabel = String.format("FONTSET_%X", i);
+				program.getSymbolTable().createLabel(charAddress, charLabel, SourceType.IMPORTED);
+			}
+
+			log.appendMsg("CHIP-8 font set loaded at: 0x000");
+
+
+			// ========== Memory Block for Loading CHIP-8 ROM ==========
+			// Define the starting address for CHIP-8 programs as an Address object (at 0x200)
+			Address programStart = program.getAddressFactory().getDefaultAddressSpace().getAddress(CHIP8_PROGRAM_START_OFFSET);
+
+			// Create a memory block starting for the CHIP-8 program ROM
 			MemoryBlock block = memory.createInitializedBlock(
-				"RAM",              // Block name
-				startAddress,       // Starting address (0x200)
+				"CHIP8_ROM",              	// Block name
+				programStart,              	// Starting address (0x200)
 				provider.getInputStream(0), // Input stream from the file
-				provider.length(),  // Size of the file
-				monitor,           // Task monitor
-				false              // Overlay flag
+				provider.length(),  		// Size of the file
+				monitor,           			// Task monitor
+				false              			// Overlay flag
 			);
 			
-			// Set the memory block properties
+			// Set program memory block properties
 			block.setRead(true);
 			block.setWrite(true);
 			block.setExecute(true);
 			
 			// Add the entry point at 0x200
-			program.getSymbolTable().addExternalEntryPoint(startAddress);
+			program.getSymbolTable().addExternalEntryPoint(programStart);
 			
-			// Optionally, create a label at the entry point
-			program.getSymbolTable().createLabel(startAddress, "entry", SourceType.IMPORTED);
+			// Create a label at the entry point
+			program.getSymbolTable().createLabel(programStart, "main", SourceType.IMPORTED);
 			
-			log.appendMsg("CHIP-8 program loaded starting at address 0x200");
+			log.appendMsg("CHIP-8 program loaded starting at: 0x200");
 		} catch (Exception e) {
 			log.appendException(e);
 			throw new IOException("Failed to load CHIP-8 program", e);

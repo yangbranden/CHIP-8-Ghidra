@@ -59,20 +59,21 @@ Other Resources
 	- [x] Write SLASPEC and SINC files
 		- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
 	- [x] Use the completed Ghidra processor to examine some ROMs
-- [ ] Custom Ghidra Loader
+- [X] Custom Ghidra Loader
 	- [X] automatically set base address to `0x200` when importing `.ch8` file
+	- [X] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
+- [ ] Auto-analysis script?
 	- [ ] be able to detect sprites in memory (currently just looks like bytes)
-	- [ ] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule
 
-Target Completion Date: 7/25/2025
+Target Completion Date: 7/20/2025
 
 | Task                                                                                                                                   | Target Completion Date | Notes                                                                                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Notes on CHIP-8; <br>- Register layout<br>- Memory layout<br>- Instruction set                                                         | 6/27                   | Should know everything necessary about the langauge to define a Ghidra processor                                                                     |
 | Complete development of Ghidra processor<br>- LDEFS file<br>- PSPEC file<br>- OPINION file<br>- CSPEC file<br>- SLASPEC and SINC files | 7/4                    | Will maybe not be perfect, but should be usable by this milestone                                                                                    |
 | Use the completed Ghidra processor to examine some ROMs; take notes on observations                                                    | 7/11                   | I want to have some sort of meaningful results or understanding gained from looking at the disassembled game ROMs; i.e. be able to write my own game |
-| Write my own game ROM and examine how it looks in Ghidra                                                                               | 7/18                   | maybe snake? tetris? idk                                                                                                                             |
-| Prepare technical presentation on work done, lessons learned, etc.                                                                     | 7/25                   |                                                                                                                                                      |
+| Prepare technical presentation on work done, lessons learned, etc.                                                                     | 7/20                   | current idea: CHIP-8 history -> emulator -> processor -> loader -> etc.                                                                              |
+| (if time/motivation) Write my own game ROM and examine how it looks in Ghidra                                                          | 7/25                   | maybe snake? tetris? idk                                                                                                                             |

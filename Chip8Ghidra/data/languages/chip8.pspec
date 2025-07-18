@@ -49,9 +49,10 @@
     <symbol name="FONTSET_E" address="0x046"/>
     <symbol name="FONTSET_F" address="0x04b"/>
   </default_symbols>
-  <default_memory_blocks>
-    <!-- The font set is not automatically populated; we need to use a script for this to show values -->
-    <memory_block name="FONTSET" start_address="0x000" length="0x50" initialized="true" mode="r"/>
+  <!-- After implementing the loader, I no longer specify these more-specific memory blocks; everything definite is handled by the custom loader -->
+  <!-- i.e. all memory blocks defined here should be generalizations -->
+  <!-- <default_memory_blocks> -->
+    <!-- <memory_block name="FONTSET" start_address="0x000" length="0x50" initialized="true" mode="r"/> -->
 
     <!-- Stack location is not specified in specification anywhere, I just put it here for completeness -->
     <!-- But actually I think I'm going to remove it because it doesn't offer any insight for static analysis -->
@@ -59,5 +60,5 @@
 
     <!-- This should not be specified; we assume that the program is loaded into address 0x200 -->
     <!-- <memory_block name="PROGRAM" start_address="0x200" length="0xe00" initialized="false" mode="rw"/> --> 
-  </default_memory_blocks>
+  <!-- </default_memory_blocks> -->
 </processor_spec>

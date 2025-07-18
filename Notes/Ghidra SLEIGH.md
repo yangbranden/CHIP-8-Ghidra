@@ -284,6 +284,10 @@ Examples:
 :load3 r1,[r2] is opcode=0x9b & r1 & r2 { r1 = *:2 r2; }
 :load4 r1,[r2] is opcode=0x9c & r1 & r2 { r1 = *[other]:2 r2; }
 ```
+1. Loads dereferenced value of `r2`  into register `r1`; occurs in **default address space**, and the **size** of the data loaded is **inferred** by the compiler (based on size of `r1`)
+2. Same as first, but `*[other]` syntax specifies that the memory access occurs in the address space explicitly named **`other`**, rather than the default one
+3. `*:2` syntax specifies that exactly 2 bytes of data should be loaded
+4. Most explicit form; specifies that exactly **2 bytes** of data should be loaded from the address space named `other`
 
 ## P-code Macros
 allows the designer to define p-code subroutines which can be invoked as part of a constructor’s semantic action
