@@ -1,38 +1,32 @@
-# CHIP-8 Ghidra Processor
+# CHIP-8 Ghidra
 
-A (WIP) Ghidra module/processor for reverse engineering CHIP-8 programs.
+A (WIP) Ghidra module for reverse engineering CHIP-8 programs.
 
 ## Repository Layout
 
 ```
-CHIP-8-Ghidra-Processor
-├── Chip8_Processor: The Eclipse Ghidra module project files (open using Eclipse)
+CHIP-8-Ghidra
+├── Chip8Ghidra: The Eclipse Ghidra module project files (open using Eclipse)
 │   ├── data: Definition files for the CHIP-8 Ghidra processor
 │   │   ├── languages
 │   │   │   ├── chip8.cspec
 │   │   │   ├── chip8.ldefs
-│   │   │   ├── chip8.opinion
 │   │   │   ├── chip8.pspec
-│   │   │   ├── chip8.sinc
-│   │   │   ├── chip8.slaspec
-│   │   │   └── TBD
-│   ├── src: some stuff idk about yet
-│   │   └── TBD
+│   │   │   └── chip8.slaspec
+│   ├── src/java/chip8ghidra
+│   │   └── Chip8GhidraLoader.java: my custom loader for CHIP-8 ROMs
 │   └── TBD
 ├── Notes
-│   └── Architecture.md: notes on CHIP-8 architecture/specification
+│   ├── CHIP-8 Architecture.md: notes on CHIP-8 architecture/specification
+│   ├── CHIP-8 Loader Design Notes.md: design process for my custom loader
+│   ├── CHIP-8 Processor Design Notes.md: design process for my custom processor
+│   └── etc... (I have more notes but the above are the most relevant to the code)
 └── README.md: This file
 ```
 
 ## Usage
 
-TODO: make this more descriptive (and add images)
-
-Download Eclipse and open up the `Chip8_Processor` folder as a project
-
-Right-click the `buildLanguage.xml` file > `Run As` > `1 Ant Build` to compile, or `3 Ghidra` to use
-
-When importing a CHIP-8 ROM program (`.ch8`), make sure to set the base address as `0x200`; all CHIP-8 ROMs assume a base address of `0x200`, but Ghidra isn't able to set that automatically with a processor. Currently looking into scripts or other methods of automatically setting base address.
+TODO
 
 ## Resources
 Key Important Resources
@@ -55,19 +49,20 @@ Other Resources
 	- [x] Register layout
 	- [x] Memory layout
 	- [x] Instruction set
-- [x] Write LDEFS file
-	- initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
-- [x] Write PSPEC file
-	- definition for default register values and specific register names for common processor functions (such as the program counter and stack pointer)
-- [x] Write CSPEC file
-	- compiler specification; define default aspects of your processor your compiler will use
-- [x] Write SLASPEC and SINC files
-	- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
-- [x] Use the completed Ghidra processor to examine some ROMs
-- [ ] Additional functionality (possible through scripting?)
-1. automatically set base address to `0x200` when importing `.ch8` file
-2. be able to detect sprites in memory (currently just looks like bytes)
-3. be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
+- [X] Custom Ghidra Processor
+	- [x] Write LDEFS file
+		- initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
+	- [x] Write PSPEC file
+		- definition for default register values and specific register names for common processor functions (such as the program counter and stack pointer)
+	- [x] Write CSPEC file
+		- compiler specification; define default aspects of your processor your compiler will use
+	- [x] Write SLASPEC and SINC files
+		- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
+	- [x] Use the completed Ghidra processor to examine some ROMs
+- [ ] Custom Ghidra Loader
+	- [X] automatically set base address to `0x200` when importing `.ch8` file
+	- [ ] be able to detect sprites in memory (currently just looks like bytes)
+	- [ ] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule
