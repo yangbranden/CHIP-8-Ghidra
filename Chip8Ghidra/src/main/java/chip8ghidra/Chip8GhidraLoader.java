@@ -123,6 +123,23 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 
 			log.appendMsg("CHIP-8 font set loaded at: 0x000");
 
+			// ========== Memory Block for the rest of Interpreter Memory ==========
+			Address interpreterStart = program.getAddressFactory().getDefaultAddressSpace().getAddress(0x050);
+
+			// Create a memory block for remaining interpreter memory
+			MemoryBlock interpreterBlock = memory.createInitializedBlock(
+				"CHIP8_INTERPRETER",
+				interpreterStart,
+				null,
+				0x150,
+				monitor,
+				false
+			);
+
+			// Set properties for the interpreter memory block
+			fontsetBlock.setRead(true);
+			fontsetBlock.setWrite(false);
+			fontsetBlock.setExecute(false);
 
 			// ========== Memory Block for Loading CHIP-8 ROM ==========
 			// Define the starting address for CHIP-8 programs as an Address object (at 0x200)
