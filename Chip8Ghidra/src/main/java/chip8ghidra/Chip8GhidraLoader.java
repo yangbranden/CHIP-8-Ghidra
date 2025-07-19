@@ -30,6 +30,7 @@ import ghidra.util.task.TaskMonitor;
 import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.lang.LanguageCompilerSpecPair;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.listing.Listing;
 import ghidra.program.model.listing.CommentType;
@@ -76,10 +77,13 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 	public Collection<LoadSpec> findSupportedLoadSpecs(ByteProvider provider) throws IOException {
 		List<LoadSpec> loadSpecs = new ArrayList<>();
 
-		// Assume we are loading a CHIP-8 program if the provider is not empty.
-		// In a more complex architecture, we would likely want to check the file type or contents.
-		if (provider.length() > 0) {
-			loadSpecs.add(new LoadSpec(this, CHIP8_PROGRAM_START_OFFSET, true));
+		// Assume we are loading a CHIP-8 program if:
+		// 	1. file name has ".ch8" extension
+		//  2. provider (file) length is greater than 0 but less than maximum possible
+		String fileName = provider.getName();
+		if (fileName != null && fileName.toLowerCase().endsWith(".ch8") && 
+			provider.length() > 0 && provider.length() <= (0x1000 - 0x200)) {
+			loadSpecs.add(new LoadSpec(this, CHIP8_PROGRAM_START_OFFSET, new LanguageCompilerSpecPair("CHIP8:BE:8:default", "default"), true));
 		}
 
 		return loadSpecs;
