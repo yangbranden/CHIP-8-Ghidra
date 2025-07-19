@@ -31,7 +31,10 @@ import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.symbol.SourceType;
+import ghidra.program.model.listing.Listing;
+import ghidra.program.model.listing.CommentType;
 import java.io.ByteArrayInputStream;
+
 
 /**
  * Provide class-level documentation that describes what this loader does.
@@ -110,11 +113,12 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 			fontsetBlock.setWrite(false);
 			fontsetBlock.setExecute(false);
 
-			// Create labels for each character in the font set
+			// Create labels and EOL comments for each character in the font set
 			for (int i = 0; i < CHIP8_FONTSET.length / 5; i++) {
 				Address charAddress = fontsetStart.add(i * 5);
 				String charLabel = String.format("FONTSET_%X", i);
 				program.getSymbolTable().createLabel(charAddress, charLabel, SourceType.IMPORTED);
+				addFontSpriteComments(program, charAddress, i);
 			}
 
 			log.appendMsg("CHIP-8 font set loaded at: 0x000");
@@ -171,5 +175,51 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 		// validation.
 
 		return super.validateOptions(provider, loadSpec, options, program);
+	}
+
+	private void addFontSpriteComments(Program program, Address startAddr, int fontChar) {
+		Listing listing = program.getListing();
+		MemoryBlock memory = program.getMemory().getBlock(startAddr);
+		
+		if (memory == null) return;
+		
+		// Add a header comment for the font character
+		String headerComment = String.format("Font set character 0x%X (5x8):", fontChar);
+		try {
+			listing.setComment(startAddr, CommentType.PRE, headerComment);
+		} catch (Exception e) {
+			// Ignore comment setting errors
+		}
+		
+		// Add individual row comments for each of the 5 bytes
+		for (int i = 0; i < 5; i++) {
+			try {
+				Address rowAddr = startAddr.add(i);
+				
+				// Read the byte from memory
+				byte spriteByte = memory.getByte(rowAddr);
+				int byteVal = spriteByte & 0xFF;
+				
+				// Create visual representation using ASCII characters
+				StringBuilder visualRow = new StringBuilder();
+				for (int bit = 0; bit < 8; bit++) {
+					if ((byteVal & (0x80 >> bit)) != 0) {
+						visualRow.append("#");  // Filled pixel
+					} else {
+						visualRow.append(".");  // Empty pixel
+					}
+				}
+				
+				// Create the comment with hex value and visualization
+				String comment = String.format("0x%02X |%s| Row %d", byteVal, visualRow.toString(), i);
+				
+				// Add as end-of-line comment
+				listing.setComment(rowAddr, CommentType.EOL, comment);
+				
+			} catch (Exception e) {
+				System.out.println(String.format("Error adding comment at font char %d, row %d: %s", 
+					fontChar, i, e.getMessage()));
+			}
+		}
 	}
 }
