@@ -30,19 +30,56 @@ import ghidra.util.task.TaskMonitor;
 
 /**
  * CHIP-8 Sprite Analyzer - Detects and annotates sprite data in CHIP-8 programs
- * by finding the best-fit size for each potential sprite.
+ * by associating I register modifications with their closest DRW instructions.
  */
 public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
 
-    private Set<Long> candidateSpriteAddresses;
-    private Set<Integer> candidateSpriteLengths;
-    private Map<Long, Integer> bestFitSprites;
+    // Data classes for tracking instructions and associations
+    private static class IModification {
+        long instructionAddr;
+        String instructionType;
+        long iValue;
+        
+        IModification(long addr, String type, long value) {
+            this.instructionAddr = addr;
+            this.instructionType = type;
+            this.iValue = value;
+        }
+    }
+    
+    private static class DrwInstruction {
+        long drwAddr;
+        int spriteHeight;
+        
+        DrwInstruction(long addr, int height) {
+            this.drwAddr = addr;
+            this.spriteHeight = height;
+        }
+    }
+    
+    private static class SpriteAssociation {
+        long iAddr;
+        long iValue;
+        long drwAddr;
+        int spriteHeight;
+        
+        SpriteAssociation(long iAddr, long iValue, long drwAddr, int spriteHeight) {
+            this.iAddr = iAddr;
+            this.iValue = iValue;
+            this.drwAddr = drwAddr;
+            this.spriteHeight = spriteHeight;
+        }
+    }
+
+    private List<IModification> iModifications;
+    private List<DrwInstruction> drwInstructions;
+    private List<SpriteAssociation> spriteAssociations;
 
     public Chip8GhidraAnalyzer() {
-        super("CHIP-8 Sprite Analyzer", "Analyzes CHIP-8 code to find and define sprites.", AnalyzerType.BYTE_ANALYZER);
-        candidateSpriteAddresses = new HashSet<>();
-        candidateSpriteLengths = new HashSet<>();
-        bestFitSprites = new HashMap<>();
+        super("CHIP-8 Sprite Analyzer", "Analyzes CHIP-8 code to find and define sprites with I-to-DRW association.", AnalyzerType.BYTE_ANALYZER);
+        iModifications = new ArrayList<>();
+        drwInstructions = new ArrayList<>();
+        spriteAssociations = new ArrayList<>();
     }
 
     @Override
@@ -57,153 +94,298 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
 
     @Override
     public void registerOptions(Options options, Program program) {
-        // No custom options needed for this analyzer
+        // No custom options needed
     }
 
     @Override
     public boolean added(Program program, AddressSetView set, TaskMonitor monitor, MessageLog log)
             throws CancelledException {
-        System.out.println("Starting CHIP-8 Sprite Detection...");
+        System.out.println("Starting CHIP-8 Sprite Detection with I-to-DRW association...");
 
-        // Step 1: Find all candidate sprite addresses and lengths from instructions.
-        findCandidates(program, monitor, log);
-        System.out.println(String.format("Found %d candidate addresses and %d candidate lengths.",
-            candidateSpriteAddresses.size(), candidateSpriteLengths.size()));
+        // Step 1: Find all instructions that modify I register
+        findIModifications(program, monitor);
+        System.out.println(String.format("Found %d I modification instructions.", iModifications.size()));
 
-        // Step 2: For each candidate address, determine the best-fit sprite length.
-        determineBestFitSprites(program, log);
-        System.out.println(String.format("Determined %d best-fit sprites.", bestFitSprites.size()));
+        // Step 2: Find all DRW instructions
+        findDrwInstructions(program, monitor);
+        System.out.println(String.format("Found %d DRW instructions.", drwInstructions.size()));
 
-        // Step 3: Create Ghidra data structures for the identified best-fit sprites.
-        createGhidraStructuresForBestFit(program, log);
+        // Step 3: Associate each I modification with closest DRW
+        associateIWithClosestDrw();
+        System.out.println(String.format("Created %d I-to-DRW associations.", spriteAssociations.size()));
+
+        // Step 4: Create sprites based on associations
+        createSpritesFromAssociations(program, log);
 
         System.out.println("Sprite detection complete.");
         return true;
     }
 
     /**
-     * Scans the program for LD I, addr and DRW instructions to populate candidate lists.
+     * Find all LD I and ADD I instructions that modify the I register.
      */
-    private void findCandidates(Program program, TaskMonitor monitor, MessageLog log) throws CancelledException {
-        candidateSpriteAddresses.clear();
-        candidateSpriteLengths.clear();
-
+    private void findIModifications(Program program, TaskMonitor monitor) throws CancelledException {
+        iModifications.clear();
+        
         Listing listing = program.getListing();
         InstructionIterator instrIter = listing.getInstructions(true);
 
         while (instrIter.hasNext() && !monitor.isCancelled()) {
             Instruction instruction = instrIter.next();
+            long addr = instruction.getAddress().getOffset();
+            
             if (isLoadIInstruction(instruction)) {
-                Long addrValue = getLoadIAddress(instruction);
-                if (addrValue != null) {
-                    candidateSpriteAddresses.add(addrValue);
+                Long iValue = getLoadIAddress(instruction);
+                if (iValue != null) {
+                    iModifications.add(new IModification(addr, "LD_I", iValue));
                 }
-            } else if (isDrwInstruction(instruction)) {
+            } else if (isAddIInstruction(instruction)) {
+                // For ADD I, Vx - calculate the resulting I value
+                Integer vxReg = getAddIRegister(instruction);
+                if (vxReg != null) {
+                    Long iValue = calculateAddIResult(program, addr, vxReg);
+                    if (iValue != null) {
+                        iModifications.add(new IModification(addr, "ADD_I", iValue));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Find all DRW instructions.
+     */
+    private void findDrwInstructions(Program program, TaskMonitor monitor) throws CancelledException {
+        drwInstructions.clear();
+        
+        Listing listing = program.getListing();
+        InstructionIterator instrIter = listing.getInstructions(true);
+
+        while (instrIter.hasNext() && !monitor.isCancelled()) {
+            Instruction instruction = instrIter.next();
+            if (isDrwInstruction(instruction)) {
+                long addr = instruction.getAddress().getOffset();
                 int spriteHeight = getSpriteHeight(instruction);
                 if (spriteHeight > 0) {
-                    candidateSpriteLengths.add(spriteHeight);
+                    drwInstructions.add(new DrwInstruction(addr, spriteHeight));
                 }
             }
         }
     }
 
     /**
-     * Iterates through candidate addresses and lengths to find the optimal length for each address.
-     * The best fit is the one with the fewest null bytes.
+     * Associate each I modification with its closest DRW instruction.
      */
-    private void determineBestFitSprites(Program program, MessageLog log) {
-        bestFitSprites.clear();
-
-        // For each potential sprite location...
-        for (Long address : candidateSpriteAddresses) {
-            int bestLength = -1;
-            int minNullBytes = Integer.MAX_VALUE;
-
-            // ...go through each posisble sprite length and try to find the most accurate size for the sprite
-            // based on the number of null bytes present in memory region
-            for (Integer length : candidateSpriteLengths) {
-                if (!isValidPotentialSprite(program, address, length)) {
-                    continue;
-                }
-
-                List<Integer> spriteData = readSpriteData(program, address, length);
-                if (spriteData == null || spriteData.size() != length) {
-                    continue;
-                }
-
-                int nullByteCount = countNullBytes(spriteData);
-
-                // Sprites should not be made entirely of null bytes
-                if (nullByteCount == length) {
-                    continue;
-                }
-
-                // Lower null byte count == better potential fit
-                if (nullByteCount < minNullBytes) {
-                    minNullBytes = nullByteCount;
-                    bestLength = length;
+    private void associateIWithClosestDrw() {
+        spriteAssociations.clear();
+        
+        for (IModification iMod : iModifications) {
+            // Find the DRW instruction with minimal address distance
+            DrwInstruction closestDrw = null;
+            long minDistance = Long.MAX_VALUE;
+            
+            for (DrwInstruction drw : drwInstructions) {
+                long distance = Math.abs(drw.drwAddr - iMod.instructionAddr);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestDrw = drw;
                 }
             }
-
-            if (bestLength != -1) {
-                bestFitSprites.put(address, bestLength);
+            
+            if (closestDrw != null) {
+                spriteAssociations.add(new SpriteAssociation(
+                    iMod.instructionAddr, iMod.iValue, closestDrw.drwAddr, closestDrw.spriteHeight));
+                System.out.println(String.format(
+                    "I modification at 0x%03X (I=0x%03X) -> DRW at 0x%03X (height=%d)",
+                    iMod.instructionAddr, iMod.iValue, closestDrw.drwAddr, closestDrw.spriteHeight));
             }
         }
     }
-    
-    /**
-     * Creates Ghidra data types, labels, and comments for the final best-fit sprites.
-     */
-    private void createGhidraStructuresForBestFit(Program program, MessageLog log) {
-        List<Long> sortedAddresses = new ArrayList<>(bestFitSprites.keySet());
-        Collections.sort(sortedAddresses);
 
-        for (Long address : sortedAddresses) {
-            int height = bestFitSprites.get(address);
+    /**
+     * Calculate the resulting I value from ADD I, Vx instruction.
+     */
+    private Long calculateAddIResult(Program program, long addIAddr, int vxRegister) {
+        // First, find the preceding LD I instruction to get base I value
+        Long baseIValue = findPrecedingLdI(addIAddr);
+        if (baseIValue == null) {
+            return null;
+        }
+        
+        // Find the value in Vx register
+        int vxValue = findPrecedingVxValue(program, addIAddr, vxRegister);
+        
+        long resultIValue = baseIValue + vxValue;
+        
+        // Validate that result points to potential sprite data (not instructions)
+        if (isValidSpriteLocation(program, resultIValue)) {
+            return resultIValue;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Find the most recent LD I instruction before current address.
+     */
+    private Long findPrecedingLdI(long currentAddr) {
+        for (int i = iModifications.size() - 1; i >= 0; i--) {
+            IModification iMod = iModifications.get(i);
+            if (iMod.instructionAddr < currentAddr && "LD_I".equals(iMod.instructionType)) {
+                return iMod.iValue;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find the value in Vx register by looking for preceding LD Vx, nn.
+     */
+    private int findPrecedingVxValue(Program program, long currentAddr, int vxRegister) {
+        Listing listing = program.getListing();
+        
+        try {
+            Address addrObj = program.getAddressFactory().getDefaultAddressSpace().getAddress(currentAddr);
+            
+            // Search backwards for LD Vx, nn instruction
+            for (int i = 0; i < 50; i++) { // Search up to 50 instructions back
+                addrObj = addrObj.subtract(2);
+                if (addrObj.getOffset() < 0x200) {
+                    break;
+                }
+                
+                Instruction instruction = listing.getInstructionAt(addrObj);
+                if (instruction == null) {
+                    continue;
+                }
+                
+                if (isLoadVxInstruction(instruction, vxRegister)) {
+                    return getLoadVxValue(instruction);
+                }
+            }
+            
+            // Common fallback values for sprite operations
+            return 8; // Often used for 8-pixel wide sprite offsets
+            
+        } catch (Exception e) {
+            return 8;
+        }
+    }
+
+    /**
+     * Create sprites based on I-to-DRW associations.
+     */
+    private void createSpritesFromAssociations(Program program, MessageLog log) {
+        Set<Long> createdSprites = new HashSet<>();
+        
+        for (SpriteAssociation assoc : spriteAssociations) {
+            // Skip duplicates at same address
+            if (createdSprites.contains(assoc.iValue)) {
+                continue;
+            }
+            
+            if (!isValidSpriteLocation(program, assoc.iValue)) {
+                continue;
+            }
+            
             try {
-                Address startAddr = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
+                Address addrObj = program.getAddressFactory().getDefaultAddressSpace().getAddress(assoc.iValue);
+                List<Integer> spriteData = readSpriteData(program, assoc.iValue, assoc.spriteHeight);
                 
-                List<Integer> spriteData = readSpriteData(program, address, height);
-                if (spriteData == null) continue;
+                if (spriteData == null || spriteData.size() != assoc.spriteHeight) {
+                    continue;
+                }
                 
-                createGhidraDataStructure(program, startAddr, height);
-                addSpriteComments(program, startAddr, spriteData, address);
-                System.out.println(String.format("Created sprite at 0x%03X, height %d", address, height));
+                // Skip sprites that are entirely null bytes
+                if (spriteData.stream().allMatch(b -> b == 0)) {
+                    continue;
+                }
+                
+                createGhidraDataStructure(program, addrObj, assoc.spriteHeight);
+                addSpriteComments(program, addrObj, spriteData, assoc);
+                System.out.println(String.format(
+                    "Created sprite at 0x%03X, height %d (I from 0x%03X, DRW at 0x%03X)",
+                    assoc.iValue, assoc.spriteHeight, assoc.iAddr, assoc.drwAddr));
+                
+                createdSprites.add(assoc.iValue);
                 
             } catch (Exception e) {
-                System.out.println(String.format("Error creating sprite at 0x%03X: %s", address, e.getMessage()));
+                System.out.println(String.format("Error creating sprite at 0x%03X: %s", assoc.iValue, e.getMessage()));
             }
         }
     }
 
-    // ======== Helper and Utility Methods ========
-
-    private int countNullBytes(List<Integer> data) {
-        return (int) data.stream().filter(b -> b == 0).count();
-    }
-    
-    private boolean isValidPotentialSprite(Program program, long address, int height) {
-        long endOffset = address + height;
-        final long VALID_REGION_END = 4096; // CHIP-8 memory size
-        if (address < 0 || endOffset > VALID_REGION_END) {
+    /**
+     * Check if address points to valid sprite data (not instructions).
+     */
+    private boolean isValidSpriteLocation(Program program, long address) {
+        if (address < 0x200 || address >= 4096) {
             return false;
         }
-
+        
         Listing listing = program.getListing();
         try {
-            Address startAddr = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
-            for (int i = 0; i < height; i++) {
-                // Region overlaps with existing code
-                if (listing.getInstructionAt(startAddr.add(i)) != null) {
-                    return false;
-                }
-            }
-        } catch (AddressOutOfBoundsException e) {
+            Address addrObj = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
+            // If there's an instruction at this address, it's not sprite data
+            return listing.getInstructionAt(addrObj) == null;
+        } catch (Exception e) {
             return false;
         }
-        return true;
     }
-    
+
+    // --- Instruction Detection Methods ---
+
+    private boolean isAddIInstruction(Instruction instruction) {
+        try {
+            byte[] bytes = instruction.getBytes();
+            if (bytes.length >= 2) {
+                return (bytes[0] & 0xF0) == 0xF0 && (bytes[1] & 0xFF) == 0x1E;
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return false;
+    }
+
+    private Integer getAddIRegister(Instruction instruction) {
+        try {
+            byte[] bytes = instruction.getBytes();
+            if (bytes.length >= 2) {
+                return bytes[0] & 0x0F;
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return null;
+    }
+
+    private boolean isLoadVxInstruction(Instruction instruction, int targetRegister) {
+        try {
+            byte[] bytes = instruction.getBytes();
+            if (bytes.length >= 2) {
+                if ((bytes[0] & 0xF0) == 0x60) { // LD Vx, nn pattern
+                    int register = bytes[0] & 0x0F;
+                    return register == targetRegister;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return false;
+    }
+
+    private int getLoadVxValue(Instruction instruction) {
+        try {
+            byte[] bytes = instruction.getBytes();
+            if (bytes.length >= 2) {
+                return bytes[1] & 0xFF;
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return 0;
+    }
+
     private boolean isDrwInstruction(Instruction instruction) {
         try {
             byte[] bytes = instruction.getBytes();
@@ -238,7 +420,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 return (long) (((bytes[0] & 0x0F) << 8) | (bytes[1] & 0xFF));
             }
         } catch (Exception e) {
-            continue;
+            // Ignore
         }
         return null;
     }
@@ -276,9 +458,12 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
         symbolTable.createLabel(addrObj, spriteName, SourceType.ANALYSIS);
     }
     
-    private void addSpriteComments(Program program, Address startAddr, List<Integer> spriteData, long baseAddress) {
+    private void addSpriteComments(Program program, Address startAddr, List<Integer> spriteData, SpriteAssociation assoc) {
         Listing listing = program.getListing();
-        String headerComment = String.format("Sprite 0x%03X (%dx8)", baseAddress, spriteData.size());
+        
+        // Add header comment with association information
+        String headerComment = String.format("Sprite 0x%03X (%dx8) - I set at 0x%03X, DRW at 0x%03X", 
+                assoc.iValue, spriteData.size(), assoc.iAddr, assoc.drwAddr);
         listing.setComment(startAddr, CodeUnit.PRE_COMMENT, headerComment);
 
         for (int i = 0; i < spriteData.size(); i++) {
@@ -292,7 +477,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 String comment = String.format("0x%02X |%s|", byteVal, visualRow.toString());
                 listing.setComment(rowAddr, CodeUnit.EOL_COMMENT, comment);
             } catch (Exception e) {
-                continue;
+                // Ignore comment errors on individual rows
             }
         }
     }
