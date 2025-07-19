@@ -232,7 +232,7 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 				}
 				
 				// Create the comment with hex value and visualization
-				String comment = String.format("0x%02X |%s| Row %d", byteVal, visualRow.toString(), i);
+				String comment = String.format("0x%02X |%s|", byteVal, visualRow.toString());
 				
 				// Add as end-of-line comment
 				listing.setComment(rowAddr, CommentType.EOL, comment);

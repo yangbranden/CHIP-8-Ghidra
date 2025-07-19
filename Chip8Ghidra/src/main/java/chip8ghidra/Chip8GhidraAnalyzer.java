@@ -140,11 +140,11 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                     iModifications.add(new IModification(addr, "LD_I", iValue));
                 }
             } else if (isAddIInstruction(instruction)) {
-                // For ADD I, Vx - calculate the resulting I value
+                // For ADD I, Vx - calculate multiple resulting I values (for loops)
                 Integer vxReg = getAddIRegister(instruction);
                 if (vxReg != null) {
-                    Long iValue = calculateAddIResult(program, addr, vxReg);
-                    if (iValue != null) {
+                    List<Long> iValues = calculateAddIResults(program, addr, vxReg);
+                    for (Long iValue : iValues) {
                         iModifications.add(new IModification(addr, "ADD_I", iValue));
                     }
                 }
@@ -203,26 +203,57 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
     }
 
     /**
-     * Calculate the resulting I value from ADD I, Vx instruction.
+     * Calculate the resulting I values from ADD I, Vx instruction (for loop detection).
+     * Keeps adding the offset until we hit an instruction or invalid address.
      */
-    private Long calculateAddIResult(Program program, long addIAddr, int vxRegister) {
+    private List<Long> calculateAddIResults(Program program, long addIAddr, int vxRegister) {
+        List<Long> results = new ArrayList<>();
+        
         // First, find the preceding LD I instruction to get base I value
         Long baseIValue = findPrecedingLdI(addIAddr);
         if (baseIValue == null) {
-            return null;
+            return results;
         }
         
-        // Find the value in Vx register
+        // Find the value in Vx register (the offset)
         int vxValue = findPrecedingVxValue(program, addIAddr, vxRegister);
         
-        long resultIValue = baseIValue + vxValue;
+        // Estimate sprite height for validation
+        int estimatedHeight = estimateSpriteHeight(addIAddr);
         
-        // Validate that result points to potential sprite data (not instructions)
-        if (isValidSpriteLocation(program, resultIValue)) {
-            return resultIValue;
+        // Keep adding the offset until we hit an instruction or go out of bounds
+        long currentIValue = baseIValue;
+        int maxIterations = 50; // Prevent infinite loops
+        
+        for (int iteration = 1; iteration <= maxIterations; iteration++) {
+            currentIValue += vxValue;
+            
+            // Check bounds
+            if (currentIValue < 0x200 || currentIValue >= 4096) {
+                break;
+            }
+            
+            // Validate that result points to potential sprite data (not instructions)
+            if (!isValidSpriteLocation(program, currentIValue, estimatedHeight)) {
+                break;
+            }
+            
+            // Check if the data at this location looks like sprite data
+            if (isLikelyEmptyOrInvalidSprite(program, currentIValue)) {
+                break;
+            }
+            
+            results.add(currentIValue);
+            System.out.println(String.format(
+                "ADD I loop iteration %d: base=0x%03X + (%d * %d) = 0x%03X", 
+                iteration, baseIValue, iteration, vxValue, currentIValue));
         }
         
-        return null;
+        System.out.println(String.format(
+            "ADD I at 0x%03X generated %d potential sprite addresses", 
+            addIAddr, results.size()));
+        
+        return results;
     }
 
     /**
@@ -273,6 +304,73 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
     }
 
     /**
+     * Estimate sprite height for ADD I validation by looking at nearby DRW instructions.
+     */
+    private int estimateSpriteHeight(long addIAddr) {
+        // Find the closest DRW instruction to estimate sprite height
+        int closestHeight = 8; // Default fallback
+        long minDistance = Long.MAX_VALUE;
+        
+        for (DrwInstruction drw : drwInstructions) {
+            long distance = Math.abs(drw.drwAddr - addIAddr);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestHeight = drw.spriteHeight;
+            }
+        }
+        
+        return closestHeight;
+    }
+
+    /**
+     * Check if the address likely contains empty or invalid sprite data.
+     */
+    private boolean isLikelyEmptyOrInvalidSprite(Program program, long address) {
+        try {
+            Memory memory = program.getMemory();
+            Address startAddr = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
+            
+            // Read a few bytes to check if they look like valid sprite data
+            int bytesToCheck = Math.min(8, (int)(4096 - address));
+            int nullBytes = 0;
+            int totalBytes = 0;
+            
+            for (int i = 0; i < bytesToCheck; i++) {
+                try {
+                    byte byteVal = memory.getByte(startAddr.add(i));
+                    totalBytes++;
+                    if ((byteVal & 0xFF) == 0) {
+                        nullBytes++;
+                    }
+                } catch (Exception e) {
+                    break;
+                }
+            }
+            
+            // If more than 75% of bytes are null, likely not a sprite
+            if (totalBytes > 0 && (double)nullBytes / totalBytes > 0.75) {
+                return true;
+            }
+            
+            // Additional check: if we're reading all 0xFF bytes, might be uninitialized memory
+            try {
+                byte firstByte = memory.getByte(startAddr);
+                byte secondByte = memory.getByte(startAddr.add(1));
+                if ((firstByte & 0xFF) == 0xFF && (secondByte & 0xFF) == 0xFF) {
+                    return true;
+                }
+            } catch (Exception e) {
+                return true;
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
      * Create sprites based on I-to-DRW associations.
      */
     private void createSpritesFromAssociations(Program program, MessageLog log) {
@@ -284,7 +382,8 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 continue;
             }
             
-            if (!isValidSpriteLocation(program, assoc.iValue)) {
+            // Check with the actual sprite height
+            if (!isValidSpriteLocation(program, assoc.iValue, assoc.spriteHeight)) {
                 continue;
             }
             
@@ -317,17 +416,30 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
 
     /**
      * Check if address points to valid sprite data (not instructions).
+     * This checks the ENTIRE sprite range, not just the starting address.
      */
-    private boolean isValidSpriteLocation(Program program, long address) {
-        if (address < 0x200 || address >= 4096) {
+    private boolean isValidSpriteLocation(Program program, long address, int height) {
+        if (address < 0x200 || address + height > 4096) {
             return false;
         }
         
         Listing listing = program.getListing();
         try {
-            Address addrObj = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
-            // If there's an instruction at this address, it's not sprite data
-            return listing.getInstructionAt(addrObj) == null;
+            Address startAddr = program.getAddressFactory().getDefaultAddressSpace().getAddress(address);
+            
+            // Check EVERY byte in the sprite range for instructions
+            for (int i = 0; i < height; i++) {
+                Address currentAddr = startAddr.add(i);
+                if (listing.getInstructionAt(currentAddr) != null) {
+                    System.out.println(String.format(
+                        "Sprite at 0x%03X (height %d) overlaps with instruction at 0x%03X - skipping",
+                        address, height, currentAddr.getOffset()));
+                    return false;
+                }
+            }
+            
+            return true;
+            
         } catch (Exception e) {
             return false;
         }
