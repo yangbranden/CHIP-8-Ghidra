@@ -1,5 +1,5 @@
 define endian=big;
-define alignment=2;
+define alignment=1;
 
 ## Address spaces
 # CHIP-8 address space is 4096 bytes, so 2-byte addresses
