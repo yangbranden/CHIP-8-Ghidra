@@ -102,13 +102,13 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
             throws CancelledException {
         System.out.println("Starting CHIP-8 Sprite Detection with I-to-DRW association...");
 
-        // Step 1: Find all instructions that modify I register
-        findIModifications(program, monitor);
-        System.out.println(String.format("Found %d I modification instructions.", iModifications.size()));
-
-        // Step 2: Find all DRW instructions
+        // Step 1: Find all DRW instructions FIRST (needed for estimateSpriteHeight)
         findDrwInstructions(program, monitor);
         System.out.println(String.format("Found %d DRW instructions.", drwInstructions.size()));
+
+        // Step 2: Find all instructions that modify I register
+        findIModifications(program, monitor);
+        System.out.println(String.format("Found %d I modification instructions.", iModifications.size()));
 
         // Step 3: Associate each I modification with closest DRW
         associateIWithClosestDrw();
@@ -295,11 +295,11 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 }
             }
             
-            // Common fallback values for sprite operations
-            return 8; // Often used for 8-pixel wide sprite offsets
+            // Maximum CHIP-8 sprite height fallback
+            return 15; // Maximum possible sprite height in CHIP-8
             
         } catch (Exception e) {
-            return 8;
+            return 15;
         }
     }
 
@@ -308,7 +308,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
      */
     private int estimateSpriteHeight(long addIAddr) {
         // Find the closest DRW instruction to estimate sprite height
-        int closestHeight = 8; // Default fallback
+        int closestHeight = 15; // Maximum CHIP-8 sprite height as default fallback
         long minDistance = Long.MAX_VALUE;
         
         for (DrwInstruction drw : drwInstructions) {
