@@ -24,16 +24,19 @@ This essentially consists of a `class` that extends `AbstractProgramWrapperLoade
 
 For this issue, all I need is the `findSupportedLoadSpecs()` and `load()` methods;
 
-Typically when writing logic for `findSupportedLoadSpecs()`, you would want to have some sort of byte-matching or something to ensure that what we're looking at is the correct filetype; but since CHIP-8 doesn't have any magic header bytes (e.g. like ELF has `\x7F\x45\x4c\x46`), we can just assume that what we're looking at is a CHIP-8 ROM (as long as it isn't 0 bytes):
+Typically when writing logic for `findSupportedLoadSpecs()`, you would want to have some sort of byte-matching or something to ensure that what we're looking at is the correct filetype; but since CHIP-8 doesn't have any magic header bytes (e.g. like ELF has `\x7F\x45\x4c\x46`), we can just assume that what we're looking at is a CHIP-8 ROM based on file extension and length:
 ```java
 @Override
 public Collection<LoadSpec> findSupportedLoadSpecs(ByteProvider provider) throws IOException {
 	List<LoadSpec> loadSpecs = new ArrayList<>();
 
-	// Assume we are loading a CHIP-8 program if the provider is not empty.
-	// In a more complex architecture, we would likely want to check the file type or contents.
-	if (provider.length() > 0) {
-		loadSpecs.add(new LoadSpec(this, CHIP8_PROGRAM_START_OFFSET, true));
+	// Assume we are loading a CHIP-8 program if:
+	// 	1. file name has ".ch8" extension
+	//  2. provider (file) length is greater than 0 but less than maximum possible
+	String fileName = provider.getName();
+	if (fileName != null && fileName.toLowerCase().endsWith(".ch8") && 
+		provider.length() > 0 && provider.length() <= (0x1000 - 0x200)) {
+		loadSpecs.add(new LoadSpec(this, CHIP8_PROGRAM_START_OFFSET, new LanguageCompilerSpecPair("CHIP8:BE:8:default", "default"), true));
 	}
 
 	return loadSpecs;

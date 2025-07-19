@@ -62,8 +62,9 @@ Other Resources
 - [X] Custom Ghidra Loader
 	- [X] automatically set base address to `0x200` when importing `.ch8` file
 	- [X] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
-- [ ] Auto-analysis script?
-	- [ ] be able to detect sprites in memory (currently just looks like bytes)
+- [ ] Custom Ghidra Analyzer
+	- [X] be able to detect sprites in memory (currently just looks like bytes)
+	- [ ] fix bugs
 - [ ] Write my own game ROM and examine how it looks in Ghidra
 
 ## Schedule
