@@ -10,7 +10,6 @@ from ghidra.program.model.mem import *
 from ghidra.program.model.data import *
 from ghidra.program.model.symbol import *
 from ghidra.util.data.DataTypeParser import *
-from java.util import ArrayList
 from java.util import HashSet
 
 class Chip8SpriteDetector(GhidraScript):
@@ -38,7 +37,7 @@ class Chip8SpriteDetector(GhidraScript):
             }
         print("Potential sprite addresses:", formatted_addresses)
         
-        # Step 3: Create sprite data structuresa
+        # Step 3: Create sprite data structures
         self.create_sprite_data_structures()
         
         print("Sprite detection complete.")
@@ -191,6 +190,10 @@ class Chip8SpriteDetector(GhidraScript):
 
     def is_valid_sprite_data(self, sprite_data, addr_obj, height):
         if not sprite_data:
+            return False
+        
+        # Check if region is NULL (i.e. no sprite data)
+        if all(b == 0 for b in sprite_data):
             return False
         
         # Check if any of the sprite bytes are already instructions
