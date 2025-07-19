@@ -148,7 +148,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 Long addrValue = getLoadIAddress(instruction);
                 if (addrValue != null) {
                     iAddresses.add(addrValue);
-                    System.out.println(String.format("  Found LD I, 0x%03X at %s", 
+                    System.out.println(String.format("\tFound LD I, 0x%03X at %s", 
                         addrValue, instruction.getAddress()));
                 }
             }
@@ -237,6 +237,15 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
         
         // Check if region is all zeros (no sprite data)
         if (spriteData.stream().allMatch(b -> b == 0)) {
+            return false;
+        }
+
+        // Check if sprite is within correct memory region
+        long startOffset = addrObj.getOffset();
+        long endOffset = startOffset + height; // address after the last byte of the sprite
+        final long VALID_REGION_START = 0;
+        final long VALID_REGION_END = 4096;
+        if (startOffset < VALID_REGION_START || endOffset > VALID_REGION_END) {
             return false;
         }
         
