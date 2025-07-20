@@ -74,7 +74,8 @@ Then also defined the static fontset sprites:
   </default_symbols>
 ```
 
-Then defined regions of memory:
+EDIT: we actually define these regions in our loader; so not necessary here anymore
+~~Then defined regions of memory:~~
 - 0x000 to 0x04F - fontset
 - 0x050 to 0x14F - stack region (16 16-bit entries)
 - 0x200 to 0xFFF - ROM program region
@@ -316,7 +317,6 @@ So with this in mind (`CALL` pushes exactly one 2-byte address, `RET` pops exact
 ```
 
 ## SLASPEC and SINC files
-
 Referencing `skel.slaspec` for how to do this (I tried looking at `x86.slaspec` and it seems more complex, referencing a bunch of `.sinc` files)
 
 Using these references:
@@ -328,6 +328,14 @@ Using these references:
 OK so I read through the specification ([resource #4](https://ghidra.re/ghidra_docs/languages/html/sleigh_definitions.html)) and took notes in [[Ghidra SLEIGH]]; 
 
 The following is notes on each CHIP-8 instruction's SLEIGH code
+
+EDIT 7/19: OK so I found out that actually it is VERY important to have alignment set to 1 (2nd line of slaspec file)
+```
+define alignment=1;
+```
+This is because CHIP-8 does NOT require instructions to be even-aligned; instructions can start on odd addresses, basically anything goes
+
+This definition basically allows us to interpret ANY address as an instruction, rather than only even-aligned addresses. very important stuff
 
 SYS instruction
 ```
