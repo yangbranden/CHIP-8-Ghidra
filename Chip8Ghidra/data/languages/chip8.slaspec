@@ -1,4 +1,8 @@
 define endian=big;
+
+# Important: because CHIP-8 is so loosely defined, many ROMs will place instructions on odd-aligned addresses;
+# although the specification says instructions *should* be even-aligned, this is not necessarily the case,
+# and in fact ROMs run perfectly fine even if they are odd-aligned (at least on my emulator).
 define alignment=1;
 
 ## Address spaces
@@ -22,8 +26,8 @@ define token instr (16)
     opcode      = (12,15)       # Opcode: Highest 4 bits
     nnn         = (0,11)        # nnn or addr: A 12-bit value, the lowest 12 bits of the instruction
     n           = (0,3)         # n or nibble: A 4-bit value, the lowest 4 bits of the instruction
-    Vx           = (8,11)       # x: A 4-bit value, the lower 4 bits of the high byte of the instruction
-    Vy           = (4,7)        # y: A 4-bit value, the upper 4 bits of the low byte of the instruction
+    Vx          = (8,11)        # Vx: A 4-bit value, the lower 4 bits of the high byte of the instruction
+    Vy          = (4,7)         # Vy: A 4-bit value, the upper 4 bits of the low byte of the instruction
     kk          = (0,7)         # kk or byte: An 8-bit value, the lowest 8 bits of the instruction
 ;
 
