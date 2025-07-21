@@ -4,13 +4,6 @@
   <!-- Program counter register (16-bit) -->
   <programcounter register="PC"/>
   <register_data>
-    <!-- Index register (16-bit) -->
-    <register name="I"/>
-    <!-- Stack pointer (16-bit) -->
-    <register name="SP"/>
-    <!-- Delay and sound timers (8-bit) -->
-    <register name="DT"/>
-    <register name="ST"/>
     <!-- General purpose registers (8-bit) -->
     <register name="V0"/>
     <register name="V1"/>
@@ -28,6 +21,13 @@
     <register name="VD"/>
     <register name="VE"/>
     <register name="VF"/>
+    <!-- Index register (16-bit) -->
+    <register name="I"/>
+    <!-- Stack pointer (16-bit) -->
+    <register name="SP"/>
+    <!-- Delay and sound timers (8-bit) -->
+    <register name="DT"/>
+    <register name="ST"/>
   </register_data>
   <default_symbols>
     <symbol name="main" address="0x200" entry="true"/>
