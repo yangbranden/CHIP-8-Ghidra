@@ -16,7 +16,7 @@ define register offset=0x00 size=1 [ V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD V
 # 16-bit registers (stack pointer, program counter, index register)
 define register offset=0x10 size=2 [ SP PC I ];
 # Other 8-bit registers (timer registers)
-define register offset=0x14 size=1 [ DT ST ];
+define register offset=0x16 size=1 [ DT ST ];
 
 
 ## Instruction format
