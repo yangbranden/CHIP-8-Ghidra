@@ -100,7 +100,8 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 
 			// ========== Memory Block for CHIP-8 FONTSET ==========
 			// Define the starting address for the CHIP-8 font set as an Address object (at 0x000)
-			Address fontsetStart = program.getAddressFactory().getDefaultAddressSpace().getAddress(0x000);
+			Address fontsetStart = program.getAddressFactory().getDefaultAddressSpace()
+				.getAddress(0x000);
 
 			// Create a memory block for the CHIP-8 font set
 			MemoryBlock fontsetBlock = memory.createInitializedBlock(
@@ -141,17 +142,18 @@ public class Chip8GhidraLoader extends AbstractProgramWrapperLoader {
 			);
 
 			// Set properties for the interpreter memory block
-			fontsetBlock.setRead(true);
-			fontsetBlock.setWrite(false);
-			fontsetBlock.setExecute(false);
+			interpreterBlock.setRead(true);
+			interpreterBlock.setWrite(false);
+			interpreterBlock.setExecute(false);
 
-			// ========== Memory Block for Loading CHIP-8 ROM ==========
+			// ========== Memory Block for CHIP-8 Program Memory (RAM) ==========
 			// Define the starting address for CHIP-8 programs as an Address object (at 0x200)
-			Address programStart = program.getAddressFactory().getDefaultAddressSpace().getAddress(CHIP8_PROGRAM_START_OFFSET);
+			Address programStart = program.getAddressFactory().getDefaultAddressSpace()
+				.getAddress(CHIP8_PROGRAM_START_OFFSET);
 
-			// Create a memory block starting for the CHIP-8 program ROM
+			// Create a memory block starting for the CHIP-8 program RAM
 			MemoryBlock block = memory.createInitializedBlock(
-				"CHIP8_ROM",              	// Block name
+				"CHIP8_RAM",              	// Block name
 				programStart,              	// Starting address (0x200)
 				provider.getInputStream(0), // Input stream from the file
 				provider.length(),  		// Size of the file
