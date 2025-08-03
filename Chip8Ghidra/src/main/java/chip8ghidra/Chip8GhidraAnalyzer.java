@@ -720,7 +720,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
         // Add header comment with association information
         String headerComment = String.format("Sprite 0x%03X (%dx8) - I set at 0x%03X, DRW at 0x%03X",
             assoc.iValue, spriteData.size(), assoc.iAddr, assoc.drwAddr);
-        listing.setComment(startAddr, CodeUnit.PRE_COMMENT, headerComment);
+        listing.setComment(startAddr, CommentType.PRE, headerComment);
         
         for (int i = 0; i < spriteData.size(); i++) {
             try {
@@ -733,7 +733,7 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
                 }
                 
                 String comment = String.format("0x%02X |%s|", byteVal, visualRow.toString());
-                listing.setComment(rowAddr, CodeUnit.EOL_COMMENT, comment);
+                listing.setComment(rowAddr, CommentType.EOL, comment);
                 
             } catch (Exception e) {
                 // Ignore comment errors on individual rows

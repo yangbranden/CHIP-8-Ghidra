@@ -7,15 +7,16 @@ A (WIP) Ghidra module for reverse engineering CHIP-8 programs.
 ```
 CHIP-8-Ghidra
 ├── Chip8Ghidra: The Eclipse Ghidra module project files (open using Eclipse)
-│   ├── data: Definition files for the CHIP-8 Ghidra processor
-│   │   ├── languages
-│   │   │   ├── chip8.cspec
-│   │   │   ├── chip8.ldefs
-│   │   │   ├── chip8.pspec
-│   │   │   └── chip8.slaspec
-│   ├── src/java/chip8ghidra
-│   │   └── Chip8GhidraLoader.java: my custom loader for CHIP-8 ROMs
-│   └── TBD
+│   ├── data/languages: Definition files for the CHIP-8 Ghidra processor
+│   │   ├── chip8.cspec
+│   │   ├── chip8.ldefs
+│   │   ├── chip8.pspec
+│   │   └── chip8.slaspec
+│   ├── src/main/java/chip8ghidra
+│   │   ├── Chip8GhidraAnalyzer.java: custom analyzer for detecting CHIP-8 sprites
+│   │   └── Chip8GhidraLoader.java: custom loader for detecting and importing CHIP-8 ROMs
+│   └── ghidra_scripts
+│   	└── Chip8InterpretSprite.py: Jython script to manually detect CHIP-8 sprites
 ├── Notes
 │   ├── CHIP-8 Architecture.md: notes on CHIP-8 architecture/specification
 │   ├── CHIP-8 Loader Design Notes.md: design process for my custom loader
@@ -25,6 +26,8 @@ CHIP-8-Ghidra
 ```
 
 ## Usage
+
+Make sure to import via Ghidra's "Import Module" option; not the default "Existing Projects" option.
 
 TODO
 
@@ -49,7 +52,7 @@ Other Resources
 	- [x] Register layout
 	- [x] Memory layout
 	- [x] Instruction set
-- [X] Custom Ghidra Processor
+- [X] Detect CHIP-8 Instructions (Custom Ghidra Processor)
 	- [x] Write LDEFS file
 		- initial language definition; enables Ghidra to load your language specification (make basic declarations about the architecture of your processor)
 	- [x] Write PSPEC file
@@ -59,22 +62,11 @@ Other Resources
 	- [x] Write SLASPEC and SINC files
 		- "This is where the memory, registers, opcodes, and opcode functionality are all defined"; "the meat of the processor specification"
 	- [x] Use the completed Ghidra processor to examine some ROMs
-- [X] Custom Ghidra Loader
+- [X] Detect and Load CHIP-8 program files (Custom Ghidra Loader)
 	- [X] automatically set base address to `0x200` when importing `.ch8` file
 	- [X] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
-- [ ] Custom Ghidra Analyzer
+- [ ] Detect CHIP-8 Sprites (Custom Ghidra Analyzer?)
 	- [X] be able to detect sprites in memory (currently just looks like bytes)
-	- [ ] fix bugs
+	- [ ] complete automatic detection algorithm
+- [ ] CHIP-8 decompilation
 - [ ] Write my own game ROM and examine how it looks in Ghidra
-
-## Schedule
-
-Target Completion Date: 7/20/2025
-
-| Task                                                                                                                                   | Target Completion Date | Notes                                                                                                                                                |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Notes on CHIP-8; <br>- Register layout<br>- Memory layout<br>- Instruction set                                                         | 6/27                   | Should know everything necessary about the langauge to define a Ghidra processor                                                                     |
-| Complete development of Ghidra processor<br>- LDEFS file<br>- PSPEC file<br>- OPINION file<br>- CSPEC file<br>- SLASPEC and SINC files | 7/4                    | Will maybe not be perfect, but should be usable by this milestone                                                                                    |
-| Use the completed Ghidra processor to examine some ROMs; take notes on observations                                                    | 7/11                   | I want to have some sort of meaningful results or understanding gained from looking at the disassembled game ROMs; i.e. be able to write my own game |
-| Prepare technical presentation on work done, lessons learned, etc.                                                                     | 7/20                   | current idea: CHIP-8 history -> emulator -> processor -> loader -> etc.                                                                              |
-| (if time/motivation) Write my own game ROM and examine how it looks in Ghidra                                                          | 7/25                   | maybe snake? tetris? idk                                                                                                                             |
