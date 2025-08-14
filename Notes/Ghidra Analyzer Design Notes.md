@@ -44,40 +44,49 @@ I then tried to map relevancy of sprite size (height) with number of null bytes 
 
 And then, I tried doing a sort of proximity-based solution; `LD I` and `ADD I` instructions give the address of the sprite, while the nearest `DRW` instruction gives the size of the sprite. But this also doesn't really make sense.
 
-Finally, I landed on the following logic:
-1. Find locations of all `DRW` instructions;
-	- Output: a mapping of (`drw_addr`, `sprite_height`)
-2. Find locations of all instructions that modify `I`, along with the potential value of `I` associated with the instruction (easy for `LD I`, but also need to include those found via `ADD I` operations); 
-	- Output: a mapping of (`instruction_addr`, `instruction`, `I_value`)
-3. Perform backwards control flow analysis to determine what possible `I` values are reachable from `DRW`; essentially:
-	- start from each `DRW` instruction
-	- parse instructions backwards, keeping track of any `I` modifications on the way
-	- if instruction has reference to it (e.g. like a jump or call), jump back to the xref, and continue parsing **on both paths**; i.e. explore all possible execution paths
-	- end when either we get to start of program (`0x200`) or another `DRW` instruction
-4. (then try to create the sprites)
+Finally, after some suggestions from people at Sandia, I landed on the following logic:
+Algorithm:
+1. Find all DRW instructions (Dxyn)
+	- Save instruction address
+	- Save sprite size (n)
+2. Find all LD I instructions (Annn)
+    - Save instruction address
+    - Save I register value (nnn)
+3. Find all ADD I instructions (Fx1E)
+    - Save instruction address
+    - Save assumed I register value based on last known value of I
+    - Determine offset being added (go backwards in logic and find the value in the register being added)
+4. Create sprites at all of the locations given by LD I instructions
+    - Find the closest DRW instruction that comes after it; use that as size
+5. Assume for ADD I instructions that they define several sprites in a loop
+    - Find the closest DRW instruction; use that as size
+    - Continue attempting to parse sprites of same size until hitting an existing sprite or instruction
 
 With this logic, my `added()` function looks like this:
 ```java
 @Override
-public boolean added(Program program, AddressSetView set, TaskMonitor monitor, MessageLog log) throws CancelledException {
-	System.out.println("Starting CHIP-8 Sprite Detection with I-to-DRW association...");
-
-	// Step 1: Find all DRW instructions FIRST (needed for estimateSpriteHeight)
+public boolean added(Program program, AddressSetView set, TaskMonitor monitor, MessageLog log)
+		throws CancelledException {
+	
+	System.out.println("Starting CHIP-8 Sprite Detection Analyzer...");
+	
+	// Step 1: Find all DRW instructions
 	findDrwInstructions(program, monitor);
 	System.out.println(String.format("Found %d DRW instructions.", drwInstructions.size()));
-
+	
 	// Step 2: Find all instructions that modify I register
 	findIModifications(program, monitor);
-	System.out.println(String.format("Found %d I modification instructions.", iModifications.size()));
-
-	// Step 3: Associate each I modification with closest DRW
-	associateIWithClosestDrw();
-	System.out.println(String.format("Created %d I-to-DRW associations.", spriteAssociations.size()));
-
-	// Step 4: Create sprites based on associations
-	createSpritesFromAssociations(program, log);
-
+	System.out.println(String.format("Found %d LD I instructions.", ldIInstructions.size()));
+	System.out.println(String.format("Found %d ADD I instructions.", addIInstructions.size()));
+	
+	// Step 3: Create sprite associations using sprite sizes (DRW instructions) and sprite locations (I modifications) 
+	createSpriteAssociations(program);
+	System.out.println(String.format("Created %d I-to-DRW associations via data flow analysis.", spriteAssociations.size()));
+	
+	// (Step 4) Draw sprites based on associations
+	drawSpritesFromAssociations(program, log);
 	System.out.println("Sprite detection complete.");
+	
 	return true;
 }
 ```
@@ -91,15 +100,15 @@ Step 1 is simple; just find all of the `DRW` instructions, which tell us the hei
  */
 private void findDrwInstructions(Program program, TaskMonitor monitor) throws CancelledException {
 	drwInstructions.clear();
-	
 	Listing listing = program.getListing();
 	InstructionIterator instrIter = listing.getInstructions(true);
-
+	
 	while (instrIter.hasNext() && !monitor.isCancelled()) {
 		Instruction instruction = instrIter.next();
-		if (isDrwInstruction(instruction)) {
-			long addr = instruction.getAddress().getOffset();
-			int spriteHeight = getSpriteHeight(instruction);
+		long addr = instruction.getAddress().getOffset();
+
+		if (isDRWInstruction(instruction)) {
+			int spriteHeight = getDRWSize(instruction);
 			if (spriteHeight > 0) {
 				drwInstructions.add(new DrwInstruction(addr, spriteHeight));
 			}
@@ -144,30 +153,85 @@ if (isLoadIInstruction(instruction)) {
 It it's an `ADD I` instruction, we need to get the last known value of `I`, along with the value of the `Vx` register:
 ```java
 } else if (isAddIInstruction(instruction)) {
-	// For ADD I, Vx - calculate multiple resulting I values (for loops)
 	Integer vxReg = getAddIRegister(instruction);
 	if (vxReg != null) {
-		List<Long> iValues = calculateAddIResults(program, addr, vxReg);
+		List<Long> iValues = calculateAddIResults(program, addr, lastIValue, vxReg);
+		if (iValues == null) {
+			System.out.println(String.format("Unable to calculate I values for ADD I instruction at 0x%03X\n", addr));
+			continue;
+		}
+
 		for (Long iValue : iValues) {
-			iModifications.add(new IModification(addr, "ADD_I", iValue));
+			addIInstructions.add(new AddIInstruction(addr, iValue));
 		}
 	}
 }
 ```
-and then we need to save all possible *valid* addresses that could exist with adding whatever value is in `Vx` to `I`; in other words, we try and check if we can create a sprite of the size without disrupting instructions or existing type-casted data at that location.
+and then we need to save all possible *valid* addresses that could exist with adding whatever value is in `Vx` to `I`; in other words, we try and check if we can create a sprite of the size without disrupting instructions or existing type-casted data at that location (in the above code, this check is done within the `calculateAddIResults` method).
 
-## Step 3: Perform backwards control flow analysis
-Now this is where the majority of the logic for our analyzer is; 
+## Step 3: Create sprite associations using sprite sizes (DRW instructions) and sprite locations (I modifications)
+I'll let the code explain itself (lol I'm just being lazy; basically just do the `LD I` instructions first, then the `ADD I`'s)
+```java
+/**
+ * Create sprite associations based on information parsed from program
+ * (DRW instructions and I modifications)
+ */
+private void createSpriteAssociations(Program program) {
+	spriteAssociations.clear();
+	Set<Long> usedSpriteAddresses = new HashSet<>();
 
-We want to associate each potential `I` value (sprite address) with its most likely size, and the way we do this is by performing backwards control flow analysis;
+	// Create associations for LD I instructions
+	for (LdIInstruction ldi : ldIInstructions) {
+		DrwInstruction closestDrw = null;
 
-i.e. start from ...
+		// Find closest DRW following the LD I instruction
+		for (DrwInstruction drw : drwInstructions) {
+			if (drw.instructionAddr > ldi.instructionAddr) {
+				if (closestDrw == null || drw.instructionAddr < closestDrw.instructionAddr) {
+					closestDrw = drw;
+				}
+			}
+		}
 
-wait why don't we just start from the instruction that `I` is changed at and then go forwards until we find a `DRW`...?
+		if (closestDrw != null) {
+			// Check if the sprite location is valid and not already associated
+			long spriteAddress = ldi.iValue;
+			int spriteHeight = closestDrw.spriteHeight;
+			if (!usedSpriteAddresses.contains(spriteAddress)) {
+				spriteAssociations.add(new SpriteAssociation(ldi.instructionAddr, spriteAddress, closestDrw.instructionAddr, spriteHeight));
+				usedSpriteAddresses.add(spriteAddress);
+			}
+		}
+	}
 
+	// Create associations for ADD I instructions
+	for (AddIInstruction addi : addIInstructions) {
+		long spriteAddress = addi.iValue;
+		long minDistance = Long.MAX_VALUE;
+		long bestDrwAddr = 0;
+		int estimatedHeight = 0;
 
+		// Find best-fit size for current addi
+		for (DrwInstruction drw : drwInstructions) {
+			long currDistance = Math.abs(addi.instructionAddr - drw.instructionAddr);
+			if (currDistance < minDistance) {
+				minDistance = currDistance;
+				bestDrwAddr = drw.instructionAddr;
+				estimatedHeight = drw.spriteHeight;
+			}
+		}
 
-
+		// Check for overlaps with already-defined sprites or instructions
+		if (isValidSpriteLocation(program, spriteAddress, estimatedHeight)) {
+			// Check if sprite already created
+			if (!usedSpriteAddresses.contains(spriteAddress)) {
+				spriteAssociations.add(new SpriteAssociation(addi.instructionAddr, spriteAddress, bestDrwAddr, estimatedHeight));
+				usedSpriteAddresses.add(spriteAddress);
+			}
+		}
+	}
+}
+```
 
 
 ## Step 4: Create sprites
@@ -221,3 +285,17 @@ private void addSpriteComments(Program program, Address startAddr, List<Integer>
 }
 ```
 
+
+## TODO
+Ok so there are technically still some issues with this approach, but right now I want to explore other things and not spend too much time on this issue which is not giving me much educational value at this point;
+
+![[Pasted image 20250813221055.png]]
+![[Pasted image 20250813221427.png]]
+
+Main issue is with instruction sequences like this:
+
+![[Pasted image 20250813221111.png]]
+
+Essentially we have a `LD V0, [I]` instead of a typical `LD V0, kk` instruction; i.e. the program is storing the size of the sprite in memory for some reason. Not entirely sure why this is, but I'll look into it later (maybe. if I have the motivation to do so. so actually probably not. yeah. whatever). 
+
+I wanna do other cool things with Ghidra instead of playing with this algorithm problem. Chris told me about the Ghidra emulator and I wanna see what it does so ya i'm gonna ignore these issues for now.

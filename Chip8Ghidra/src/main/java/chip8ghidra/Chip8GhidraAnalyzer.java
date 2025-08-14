@@ -46,7 +46,7 @@ import ghidra.util.task.TaskMonitor;
  *  4. Create sprites at all of the locations given by LD I instructions
  *      - Find the closest DRW instruction that comes after it; use that as size
  *  5. Assume for ADD I instructions that they define several sprites in a loop
- *      - Find the closest DRW instruction that comes after it; use that as size
+ *      - Find the closest DRW instruction; use that as size
  *      - Continue attempting to parse sprites of same size until hitting an existing sprite or instruction
  */
 public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
@@ -241,10 +241,32 @@ public class Chip8GhidraAnalyzer extends AbstractAnalyzer {
             }
         }
 
-        // TODO
         // Create associations for ADD I instructions
-        // for (AddIInstruction addi : addIInstructions) {
-        // }
+        for (AddIInstruction addi : addIInstructions) {
+            long spriteAddress = addi.iValue;
+            long minDistance = Long.MAX_VALUE;
+            long bestDrwAddr = 0;
+            int estimatedHeight = 0;
+
+            // Find best-fit size for current addi
+            for (DrwInstruction drw : drwInstructions) {
+                long currDistance = Math.abs(addi.instructionAddr - drw.instructionAddr);
+                if (currDistance < minDistance) {
+                    minDistance = currDistance;
+                    bestDrwAddr = drw.instructionAddr;
+                    estimatedHeight = drw.spriteHeight;
+                }
+            }
+
+            // Check for overlaps with already-defined sprites or instructions
+            if (isValidSpriteLocation(program, spriteAddress, estimatedHeight)) {
+                // Check if sprite already created
+                if (!usedSpriteAddresses.contains(spriteAddress)) {
+                    spriteAssociations.add(new SpriteAssociation(addi.instructionAddr, spriteAddress, bestDrwAddr, estimatedHeight));
+                    usedSpriteAddresses.add(spriteAddress);
+                }
+            }
+        }
     }
     
     /**

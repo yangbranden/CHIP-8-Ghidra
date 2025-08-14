@@ -337,6 +337,22 @@ This is because CHIP-8 does NOT require instructions to be even-aligned; instruc
 
 This definition basically allows us to interpret ANY address as an instruction, rather than only even-aligned addresses. very important stuff
 
+EDIT 7/20: adding notes after-the-fact since everything is working now. The following is how defining instructions works in SLASPEC files:
+
+```
+[Table Header]:[Display Section] is [Pattern Section] [Disassembly Action Section] {
+	[Semantic Section]
+}
+```
+
+- **`[Table Header]:`** Groups related constructors into a table; usually omitted for main instructions (uses default "instruction" table)
+- **`[Display Section]`** Defines the instruction's text format for disassembly (e.g., `LD Vx, kk`) and declares its operand symbols
+- **`is [Pattern Section]`** Matches the instruction's binary bit pattern and links operands to their source (a bitfield or another rule)
+- **`[Disassembly Action Section]`** Performs pre-calculations needed only for displaying operands, like resolving a relative branch address
+- **`{ [Semantic Section] }`** Describes the instruction's behavior (its semantics) in p-code for the decompiler and analysis engine
+
+
+
 SYS instruction
 ```
 # 0nnn - SYS addr; Jump to a machine code routine at addr

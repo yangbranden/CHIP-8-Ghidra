@@ -200,3 +200,6 @@ The results of this are that we are now able to simply select our `CHIP8` proces
 we can also see our log messages when we import a file, showing that our font set and program have been loaded into their respective memory locations.
 
 Now, all we have on our (current) TODO list is to figure out how to show sprites in our analysis
+
+EDIT: actually we can also have it auto-detect based on file extension and file size;
+
