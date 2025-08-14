@@ -65,8 +65,9 @@ Other Resources
 - [X] Detect and Load CHIP-8 program files (Custom Ghidra Loader)
 	- [X] automatically set base address to `0x200` when importing `.ch8` file
 	- [X] be able to automatically load the FONTSET into the memory at `0x000` to `0x050`
-- [ ] Detect CHIP-8 Sprites (Custom Ghidra Analyzer?)
+- [X] Detect CHIP-8 Sprites (Custom Ghidra Analyzer?)
 	- [X] be able to detect sprites in memory (currently just looks like bytes)
-	- [ ] complete automatic detection algorithm
+	- [X] complete automatic detection algorithm
+	- [ ] actually complete automatic detection algorithm
 - [ ] CHIP-8 decompilation
 - [ ] Write my own game ROM and examine how it looks in Ghidra
